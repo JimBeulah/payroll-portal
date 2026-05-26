@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { index } from '@/routes/employees';
 
 interface Employee {
     id: number;
@@ -21,7 +21,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
     }
 
     return (
-        <AppLayout>
+        <>
             <Head title="Employees" />
             <div className="p-6 space-y-4">
                 <div className="flex justify-between items-center">
@@ -60,6 +60,12 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                     </TableBody>
                 </Table>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+EmployeesIndex.layout = {
+    breadcrumbs: [
+        { title: 'Employees', href: index() },
+    ],
+};

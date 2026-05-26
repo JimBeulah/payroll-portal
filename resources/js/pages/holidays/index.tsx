@@ -1,8 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { index } from '@/routes/holidays';
 
 interface Holiday {
     id: number; name: string; date: string; type: 'regular' | 'special';
@@ -14,7 +14,7 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
     }
 
     return (
-        <AppLayout>
+        <>
             <Head title="Holidays" />
             <div className="p-6 space-y-4">
                 <div className="flex justify-between items-center">
@@ -53,6 +53,12 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
                     </TableBody>
                 </Table>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+HolidaysIndex.layout = {
+    breadcrumbs: [
+        { title: 'Holidays', href: index() },
+    ],
+};

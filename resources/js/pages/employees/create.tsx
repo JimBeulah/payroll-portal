@@ -1,9 +1,9 @@
 import { Head, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import InputError from '@/components/input-error';
+import { index, create } from '@/routes/employees';
 
 export default function EmployeeCreate() {
     const { data, setData, post, processing, errors } = useForm({
@@ -20,7 +20,7 @@ export default function EmployeeCreate() {
     }
 
     return (
-        <AppLayout>
+        <>
             <Head title="Add Employee" />
             <div className="p-6 max-w-lg space-y-4">
                 <h1 className="text-2xl font-bold">Add Employee</h1>
@@ -55,6 +55,13 @@ export default function EmployeeCreate() {
                     <Button type="submit" disabled={processing}>Save Employee</Button>
                 </form>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+EmployeeCreate.layout = {
+    breadcrumbs: [
+        { title: 'Employees', href: index() },
+        { title: 'Add Employee', href: create() },
+    ],
+};

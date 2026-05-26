@@ -1,10 +1,10 @@
 import { Head, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import InputError from '@/components/input-error';
+import { index, create } from '@/routes/holidays';
 
 export default function HolidayCreate() {
     const { data, setData, post, processing, errors } = useForm({
@@ -17,7 +17,7 @@ export default function HolidayCreate() {
     }
 
     return (
-        <AppLayout>
+        <>
             <Head title="Add Holiday" />
             <div className="p-6 max-w-md space-y-4">
                 <h1 className="text-2xl font-bold">Add Holiday</h1>
@@ -46,6 +46,13 @@ export default function HolidayCreate() {
                     <Button type="submit" disabled={processing}>Save Holiday</Button>
                 </form>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+HolidayCreate.layout = {
+    breadcrumbs: [
+        { title: 'Holidays', href: index() },
+        { title: 'Add Holiday', href: create() },
+    ],
+};

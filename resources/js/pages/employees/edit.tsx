@@ -1,9 +1,9 @@
 import { Head, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import InputError from '@/components/input-error';
+import { index } from '@/routes/employees';
 
 interface Employee {
     id: number; name: string; department: string;
@@ -25,7 +25,7 @@ export default function EmployeeEdit({ employee }: { employee: Employee }) {
     }
 
     return (
-        <AppLayout>
+        <>
             <Head title="Edit Employee" />
             <div className="p-6 max-w-lg space-y-4">
                 <h1 className="text-2xl font-bold">Edit Employee</h1>
@@ -60,6 +60,13 @@ export default function EmployeeEdit({ employee }: { employee: Employee }) {
                     <Button type="submit" disabled={processing}>Update Employee</Button>
                 </form>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+EmployeeEdit.layout = {
+    breadcrumbs: [
+        { title: 'Employees', href: index() },
+        { title: 'Edit Employee', href: index() },
+    ],
+};

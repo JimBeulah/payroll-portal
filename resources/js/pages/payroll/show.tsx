@@ -1,6 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { useState, useRef } from 'react';
+import { index } from '@/routes/payroll-runs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import PayrollSummaryTable, { PayrollEntry } from '@/components/payroll/payroll-summary-table';
@@ -51,7 +51,7 @@ export default function PayrollShow({ run, entries }: Props) {
     const isLocked = run.status === 'locked';
 
     return (
-        <AppLayout>
+        <>
             <Head title={`Payroll Run ${run.period_start} – ${run.period_end}`} />
             <div className="p-6 space-y-6">
                 <div className="flex justify-between items-start">
@@ -113,6 +113,13 @@ export default function PayrollShow({ run, entries }: Props) {
                 open={selectedEntry !== null}
                 onClose={() => setSelectedEntry(null)}
             />
-        </AppLayout>
+        </>
     );
 }
+
+PayrollShow.layout = {
+    breadcrumbs: [
+        { title: 'Payroll Runs', href: index() },
+        { title: 'Payroll Run', href: index() },
+    ],
+};

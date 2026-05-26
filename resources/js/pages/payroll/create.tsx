@@ -1,9 +1,9 @@
 import { Head, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import InputError from '@/components/input-error';
+import { index, create } from '@/routes/payroll-runs';
 
 export default function PayrollCreate() {
     const { data, setData, post, processing, errors } = useForm({
@@ -16,7 +16,7 @@ export default function PayrollCreate() {
     }
 
     return (
-        <AppLayout>
+        <>
             <Head title="New Payroll Run" />
             <div className="p-6 max-w-md space-y-4">
                 <h1 className="text-2xl font-bold">New Payroll Run</h1>
@@ -39,6 +39,13 @@ export default function PayrollCreate() {
                     <Button type="submit" disabled={processing}>Create Run</Button>
                 </form>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+PayrollCreate.layout = {
+    breadcrumbs: [
+        { title: 'Payroll Runs', href: index() },
+        { title: 'New Payroll Run', href: create() },
+    ],
+};

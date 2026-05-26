@@ -1,8 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { index } from '@/routes/payroll-runs';
 
 interface PayrollRun {
     id: number; period_start: string; period_end: string;
@@ -11,7 +11,7 @@ interface PayrollRun {
 
 export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
     return (
-        <AppLayout>
+        <>
             <Head title="Payroll Runs" />
             <div className="p-6 space-y-4">
                 <div className="flex justify-between items-center">
@@ -47,6 +47,12 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
                     </TableBody>
                 </Table>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+PayrollIndex.layout = {
+    breadcrumbs: [
+        { title: 'Payroll Runs', href: index() },
+    ],
+};

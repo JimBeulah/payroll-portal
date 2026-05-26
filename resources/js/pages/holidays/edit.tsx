@@ -1,10 +1,10 @@
 import { Head, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import InputError from '@/components/input-error';
+import { index } from '@/routes/holidays';
 
 interface Holiday { id: number; name: string; date: string; type: string; }
 
@@ -19,7 +19,7 @@ export default function HolidayEdit({ holiday }: { holiday: Holiday }) {
     }
 
     return (
-        <AppLayout>
+        <>
             <Head title="Edit Holiday" />
             <div className="p-6 max-w-md space-y-4">
                 <h1 className="text-2xl font-bold">Edit Holiday</h1>
@@ -48,6 +48,13 @@ export default function HolidayEdit({ holiday }: { holiday: Holiday }) {
                     <Button type="submit" disabled={processing}>Update Holiday</Button>
                 </form>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+HolidayEdit.layout = {
+    breadcrumbs: [
+        { title: 'Holidays', href: index() },
+        { title: 'Edit Holiday', href: index() },
+    ],
+};
