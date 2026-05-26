@@ -4,6 +4,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\PayrollEntryController;
 use App\Http\Controllers\PayrollRunController;
+use App\Http\Controllers\PayslipController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -17,6 +18,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('payroll-runs/{payrollRun}/compute', [PayrollRunController::class, 'compute'])->name('payroll-runs.compute');
     Route::post('payroll-runs/{payrollRun}/lock', [PayrollRunController::class, 'lock'])->name('payroll-runs.lock');
     Route::put('payroll-entries/{payrollEntry}', [PayrollEntryController::class, 'update'])->name('payroll-entries.update');
+    Route::get('payroll-entries/{payrollEntry}/payslip', [PayslipController::class, 'download'])->name('payslip.download');
+    Route::get('payroll-runs/{payrollRun}/payslips/download-all', [PayslipController::class, 'downloadAll'])->name('payslip.download-all');
 });
 
 require __DIR__.'/settings.php';
