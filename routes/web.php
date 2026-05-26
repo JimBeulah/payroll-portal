@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
+use App\Http\Controllers\PayrollEntryController;
 use App\Http\Controllers\PayrollRunController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('payroll-runs/{payrollRun}/upload', [PayrollRunController::class, 'upload'])->name('payroll-runs.upload');
     Route::post('payroll-runs/{payrollRun}/compute', [PayrollRunController::class, 'compute'])->name('payroll-runs.compute');
     Route::post('payroll-runs/{payrollRun}/lock', [PayrollRunController::class, 'lock'])->name('payroll-runs.lock');
+    Route::put('payroll-entries/{payrollEntry}', [PayrollEntryController::class, 'update'])->name('payroll-entries.update');
 });
 
 require __DIR__.'/settings.php';

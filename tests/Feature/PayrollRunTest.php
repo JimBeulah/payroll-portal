@@ -82,6 +82,39 @@ class PayrollRunTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_can_update_entry_deductions(): void
+    {
+        $run = PayrollRun::factory()->create(['created_by' => $this->admin()->id]);
+        $employee = Employee::factory()->create();
+        $entry = \App\Models\PayrollEntry::create([
+            'payroll_run_id' => $run->id,
+            'employee_id' => $employee->id,
+            'days_present' => 1,
+            'total_basic_pay' => 480,
+            'overtime_minutes' => 0, 'overtime_pay' => 0,
+            'late_minutes' => 0, 'late_deduction' => 0,
+            'undertime_minutes' => 0, 'undertime_deduction' => 0,
+            'holiday_pay' => 0, 'gross_pay' => 480,
+            'cash_advance' => 0, 'other_deductions' => 0,
+            'total_deductions' => 0, 'net_pay' => 480,
+            'first_release' => 0, 'second_release' => 0,
+        ]);
+
+        $this->actingAs(User::find($run->created_by))
+            ->put("/payroll-entries/{$entry->id}", [
+                'cash_advance' => 100,
+                'other_deductions' => 50,
+                'first_release' => 165,
+                'second_release' => 165,
+            ])->assertRedirect();
+
+        $this->assertDatabaseHas('payroll_entries', [
+            'id' => $entry->id,
+            'cash_advance' => 100,
+            'net_pay' => 330, // 480 - 150
+        ]);
+    }
+
     private function buildAttendanceFile(string $name, string $dept): UploadedFile
     {
         $spreadsheet = new Spreadsheet();
