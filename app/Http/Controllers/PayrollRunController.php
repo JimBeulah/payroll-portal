@@ -9,7 +9,9 @@ use App\Models\PayrollEntry;
 use App\Models\PayrollRun;
 use App\Services\AttendanceParser;
 use App\Services\PayrollCalculator;
+use App\Services\PayrollExportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
 use Inertia\Inertia;
 
 class PayrollRunController extends Controller
@@ -146,5 +148,15 @@ class PayrollRunController extends Controller
 
         return redirect("/payroll-runs/{$payrollRun->id}")
             ->with('success', 'Payroll run locked.');
+    }
+
+    public function export(PayrollRun $payrollRun)
+    {
+        abort_if(!$payrollRun->isLocked(), 403);
+
+        $path = (new PayrollExportService())->export($payrollRun);
+        $filename = "payroll-{$payrollRun->period_start}-{$payrollRun->period_end}.xlsx";
+
+        return Response::download($path, $filename)->deleteFileAfterSend(true);
     }
 }
