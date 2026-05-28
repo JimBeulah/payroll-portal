@@ -2,17 +2,20 @@ import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import InputError from '@/components/input-error';
 import { index } from '@/routes/employees';
 
 interface Employee {
-    id: number; name: string; department: string;
-    daily_rate: string; shift_start: string; shift_end: string;
+    id: number; name: string; employee_number: string | null; gender: string | null;
+    department: string; daily_rate: string; shift_start: string; shift_end: string;
 }
 
 export default function EmployeeEdit({ employee }: { employee: Employee }) {
     const { data, setData, put, processing, errors } = useForm({
         name: employee.name,
+        employee_number: employee.employee_number ?? '',
+        gender: employee.gender ?? '',
         department: employee.department,
         daily_rate: employee.daily_rate,
         shift_start: employee.shift_start.slice(0, 5),
@@ -34,6 +37,26 @@ export default function EmployeeEdit({ employee }: { employee: Employee }) {
                         <Label>Name</Label>
                         <Input value={data.name} onChange={e => setData('name', e.target.value)} />
                         <InputError message={errors.name} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Employee Number</Label>
+                            <Input value={data.employee_number} onChange={e => setData('employee_number', e.target.value)} placeholder="e.g. EMP-001" />
+                            <InputError message={errors.employee_number} />
+                        </div>
+                        <div>
+                            <Label>Gender</Label>
+                            <Select value={data.gender} onValueChange={v => setData('gender', v)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select gender" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Male">Male</SelectItem>
+                                    <SelectItem value="Female">Female</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError message={errors.gender} />
+                        </div>
                     </div>
                     <div>
                         <Label>Department</Label>
