@@ -29,7 +29,7 @@ class PayslipPrintTest extends TestCase
     public function test_print_all_payslips_returns_403_for_draft_run(): void
     {
         $user = User::factory()->create();
-        $run = PayrollRun::factory()->draft()->create();
+        $run = PayrollRun::factory()->create();
 
         $this->actingAs($user)
             ->get("/payroll-runs/{$run->id}/payslips/print")

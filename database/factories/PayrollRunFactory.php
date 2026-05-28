@@ -22,8 +22,4 @@ class PayrollRunFactory extends Factory
         return $this->state(['status' => 'locked']);
     }
 
-    public function draft(): static
-    {
-        return $this->state(['status' => 'draft']);
-    }
 }
