@@ -10,11 +10,13 @@ class StoreEmployeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'department' => ['required', 'string', 'max:255'],
-            'daily_rate' => ['required', 'numeric', 'min:0'],
-            'shift_start' => ['required', 'date_format:H:i'],
-            'shift_end' => ['required', 'date_format:H:i'],
+            'name'            => ['required', 'string', 'max:255'],
+            'employee_number' => ['nullable', 'string', 'max:50'],
+            'gender'          => ['nullable', 'in:Male,Female'],
+            'department'      => ['required', 'string', 'max:255'],
+            'daily_rate'      => ['required', 'numeric', 'min:0'],
+            'shift_start'     => ['required', 'date_format:H:i'],
+            'shift_end'       => ['required', 'date_format:H:i'],
         ];
     }
 }
