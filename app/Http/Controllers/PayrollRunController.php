@@ -272,6 +272,16 @@ class PayrollRunController extends Controller
             ->with('success', 'Payroll run locked.');
     }
 
+    public function unlock(PayrollRun $payrollRun)
+    {
+        abort_unless($payrollRun->isLocked(), 403);
+
+        $payrollRun->update(['status' => 'draft']);
+
+        return redirect("/payroll-runs/{$payrollRun->id}")
+            ->with('success', 'Payroll run unlocked.');
+    }
+
     public function export(PayrollRun $payrollRun)
     {
         abort_if(!$payrollRun->isLocked(), 403);

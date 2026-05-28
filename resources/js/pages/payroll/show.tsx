@@ -58,6 +58,12 @@ export default function PayrollShow({ run, entries, uploads, availableEmployees 
         }
     }
 
+    function unlock() {
+        if (confirm('Unlock this payroll run? Entries will be editable again.')) {
+            router.post(`/payroll-runs/${run.id}/unlock`);
+        }
+    }
+
     function downloadAllSlips() {
         window.open(`/payroll-runs/${run.id}/payslips/download-all`, '_blank');
     }
@@ -98,6 +104,7 @@ export default function PayrollShow({ run, entries, uploads, availableEmployees 
                                     onClick={() => window.open(`/payroll-runs/${run.id}/export`, '_blank')}>
                                     Export Excel
                                 </Button>
+                                <Button onClick={unlock} variant="destructive">Unlock Run</Button>
                             </>
                         )}
                     </div>
