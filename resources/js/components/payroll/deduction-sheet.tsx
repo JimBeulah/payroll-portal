@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import InputError from '@/components/input-error';
 import { PayrollEntry } from './payroll-summary-table';
 
@@ -12,22 +14,37 @@ interface Props {
     onClose: () => void;
 }
 
+function fmt(v: string) {
+    return `₱${Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+}
+
+function StatRow({ label, value, red }: { label: string; value: string; red?: boolean }) {
+    return (
+        <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">{label}</span>
+            <span className={red ? 'text-red-500 font-medium' : 'font-medium'}>{value}</span>
+        </div>
+    );
+}
+
 export default function DeductionSheet({ entry, open, onClose }: Props) {
     const { data, setData, put, processing, errors, reset } = useForm({
-        cash_advance: entry?.cash_advance ?? '0',
-        other_deductions: entry?.other_deductions ?? '0',
-        first_release: entry?.first_release ?? '0',
-        second_release: entry?.second_release ?? '0',
+        cash_advance: '0',
+        other_deductions: '0',
+        first_release: '0',
+        second_release: '0',
     });
 
-    if (entry && data.cash_advance !== entry.cash_advance) {
-        setData({
-            cash_advance: entry.cash_advance,
-            other_deductions: entry.other_deductions,
-            first_release: entry.first_release,
-            second_release: entry.second_release,
-        });
-    }
+    useEffect(() => {
+        if (entry) {
+            setData({
+                cash_advance: entry.cash_advance,
+                other_deductions: entry.other_deductions,
+                first_release: entry.first_release,
+                second_release: entry.second_release,
+            });
+        }
+    }, [entry?.id]);
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
@@ -39,36 +56,101 @@ export default function DeductionSheet({ entry, open, onClose }: Props) {
 
     return (
         <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-            <SheetContent>
-                <SheetHeader>
-                    <SheetTitle>{entry?.employee.name}</SheetTitle>
+            <SheetContent className="flex flex-col gap-0 p-0 sm:max-w-md">
+                <SheetHeader className="px-6 pt-6 pb-4">
+                    <SheetTitle className="text-lg">{entry?.employee.name}</SheetTitle>
+                    <SheetDescription>{entry?.employee.department}</SheetDescription>
                 </SheetHeader>
-                <form onSubmit={submit} className="mt-6 space-y-4">
-                    <div>
-                        <Label>Cash Advance (₱)</Label>
-                        <Input type="number" step="0.01" min="0" value={data.cash_advance}
-                            onChange={e => setData('cash_advance', e.target.value)} />
-                        <InputError message={errors.cash_advance} />
+
+                <Separator />
+
+                {/* Pay summary */}
+                {entry && (
+                    <div className="px-6 py-4 bg-muted/40 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Pay Summary</p>
+                        <StatRow label="Days Present" value={String(entry.days_present)} />
+                        <StatRow label="Basic Pay" value={fmt(entry.total_basic_pay)} />
+                        <StatRow label="OT Pay" value={fmt(entry.overtime_pay)} />
+                        <StatRow label="Holiday Pay" value={fmt(entry.holiday_pay)} />
+                        <StatRow label="Late Deduction" value={`(${fmt(entry.late_deduction)})`} red />
+                        <StatRow label="Undertime Deduction" value={`(${fmt(entry.undertime_deduction)})`} red />
+                        <Separator className="my-1" />
+                        <div className="flex justify-between items-center text-sm font-semibold">
+                            <span>Gross Pay</span>
+                            <span>{fmt(entry.gross_pay)}</span>
+                        </div>
                     </div>
-                    <div>
-                        <Label>Other Deductions (₱)</Label>
-                        <Input type="number" step="0.01" min="0" value={data.other_deductions}
-                            onChange={e => setData('other_deductions', e.target.value)} />
-                        <InputError message={errors.other_deductions} />
+                )}
+
+                <Separator />
+
+                {/* Editable fields */}
+                <form onSubmit={submit} className="flex flex-col flex-1 overflow-y-auto">
+                    <div className="px-6 py-4 space-y-4 flex-1">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Adjustments</p>
+
+                        <div className="space-y-1.5">
+                            <Label htmlFor="cash_advance">Cash Advance (₱)</Label>
+                            <Input
+                                id="cash_advance"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={data.cash_advance}
+                                onChange={e => setData('cash_advance', e.target.value)}
+                            />
+                            <InputError message={errors.cash_advance} />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label htmlFor="other_deductions">Other Deductions (₱)</Label>
+                            <Input
+                                id="other_deductions"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={data.other_deductions}
+                                onChange={e => setData('other_deductions', e.target.value)}
+                            />
+                            <InputError message={errors.other_deductions} />
+                        </div>
+
+                        <Separator />
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Release Schedule</p>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="first_release">1st Release (₱)</Label>
+                                <Input
+                                    id="first_release"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={data.first_release}
+                                    onChange={e => setData('first_release', e.target.value)}
+                                />
+                                <InputError message={errors.first_release} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="second_release">2nd Release (₱)</Label>
+                                <Input
+                                    id="second_release"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={data.second_release}
+                                    onChange={e => setData('second_release', e.target.value)}
+                                />
+                                <InputError message={errors.second_release} />
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <Label>1st Release (₱)</Label>
-                        <Input type="number" step="0.01" min="0" value={data.first_release}
-                            onChange={e => setData('first_release', e.target.value)} />
-                        <InputError message={errors.first_release} />
+
+                    <div className="px-6 py-4 border-t bg-background">
+                        <Button type="submit" disabled={processing} className="w-full">
+                            {processing ? 'Saving…' : 'Save Changes'}
+                        </Button>
                     </div>
-                    <div>
-                        <Label>2nd Release (₱)</Label>
-                        <Input type="number" step="0.01" min="0" value={data.second_release}
-                            onChange={e => setData('second_release', e.target.value)} />
-                        <InputError message={errors.second_release} />
-                    </div>
-                    <Button type="submit" disabled={processing} className="w-full">Save</Button>
                 </form>
             </SheetContent>
         </Sheet>
