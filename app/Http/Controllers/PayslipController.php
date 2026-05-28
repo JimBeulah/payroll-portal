@@ -16,10 +16,10 @@ class PayslipController extends Controller
         $payrollEntry->load('employee', 'payrollRun');
 
         $pdf = Pdf::loadView('payslip', [
-            'entry' => $payrollEntry,
+            'entry'    => $payrollEntry,
             'employee' => $payrollEntry->employee,
-            'run' => $payrollEntry->payrollRun,
-        ]);
+            'run'      => $payrollEntry->payrollRun,
+        ])->setPaper('a4', 'portrait');
 
         $filename = str($payrollEntry->employee->name)->slug() . '-payslip.pdf';
         return $pdf->download($filename);
