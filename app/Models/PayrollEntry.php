@@ -1,10 +1,12 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PayrollEntry extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'payroll_run_id', 'employee_id', 'days_present', 'total_basic_pay',
         'overtime_minutes', 'overtime_pay', 'late_minutes', 'late_deduction',

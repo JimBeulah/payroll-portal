@@ -51,4 +51,16 @@ class PayslipController extends Controller
         return Response::download($zipPath, "payslips-{$payrollRun->period_start}-{$payrollRun->period_end}.zip")
             ->deleteFileAfterSend(true);
     }
+
+    public function printAll(PayrollRun $payrollRun)
+    {
+        abort_if(!$payrollRun->isLocked(), 403);
+
+        $payrollRun->load('entries.employee');
+
+        return view('payslip-batch', [
+            'run'     => $payrollRun,
+            'entries' => $payrollRun->entries,
+        ]);
+    }
 }
