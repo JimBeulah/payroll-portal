@@ -97,14 +97,13 @@ interface KpiCardProps {
     value: string | number;
     sub?: string;
     icon: React.ReactNode;
-    accent: string;
+    iconClass: string;
     trend?: string;
 }
 
-function KpiCard({ title, value, sub, icon, accent, trend }: KpiCardProps) {
+function KpiCard({ title, value, sub, icon, iconClass, trend }: KpiCardProps) {
     return (
         <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-sm transition-shadow hover:shadow-md">
-            <div className={`absolute inset-y-0 left-0 w-1 rounded-l-2xl ${accent}`} />
             <div className="flex items-start justify-between">
                 <div className="space-y-1">
                     <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</p>
@@ -117,9 +116,7 @@ function KpiCard({ title, value, sub, icon, accent, trend }: KpiCardProps) {
                         </span>
                     )}
                 </div>
-                <div className={`rounded-xl p-2.5 ${accent.replace('bg-', 'bg-').replace('-600', '-100').replace('-500', '-100')} dark:bg-white/10`}>
-                    <div className={`${accent.replace('bg-', 'text-')}`}>{icon}</div>
-                </div>
+                <div className={iconClass}>{icon}</div>
             </div>
         </div>
     );
@@ -173,28 +170,28 @@ export default function Dashboard({ stats, payrollTrend, departmentStats, recent
                         value={stats.total_employees}
                         sub={`${stats.active_employees} active · ${stats.inactive_employees} inactive`}
                         icon={<Users className="h-5 w-5" />}
-                        accent="bg-indigo-600"
+                        iconClass="text-indigo-500"
                     />
                     <KpiCard
                         title="Active Staff"
                         value={stats.active_employees}
                         sub="Currently employed"
                         icon={<UserCheck className="h-5 w-5" />}
-                        accent="bg-emerald-500"
+                        iconClass="text-emerald-500"
                     />
                     <KpiCard
                         title="Latest Net Payroll"
                         value={fmtShort(stats.latest_run_net_pay)}
                         sub={stats.latest_run_employees > 0 ? `${stats.latest_run_employees} employees` : 'No entries yet'}
                         icon={<Wallet className="h-5 w-5" />}
-                        accent="bg-violet-600"
+                        iconClass="text-violet-500"
                     />
                     <KpiCard
                         title="Runs This Year"
                         value={stats.total_runs_this_year}
                         sub={`${stats.locked_runs} locked`}
                         icon={<ClipboardList className="h-5 w-5" />}
-                        accent="bg-amber-500"
+                        iconClass="text-amber-500"
                     />
                 </div>
 
