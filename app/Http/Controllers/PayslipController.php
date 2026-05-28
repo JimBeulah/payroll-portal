@@ -37,10 +37,10 @@ class PayslipController extends Controller
 
         foreach ($payrollRun->entries as $entry) {
             $pdf = Pdf::loadView('payslip', [
-                'entry' => $entry,
+                'entry'    => $entry,
                 'employee' => $entry->employee,
-                'run' => $payrollRun,
-            ]);
+                'run'      => $payrollRun,
+            ])->setPaper('a4', 'portrait');
 
             $filename = str($entry->employee->name)->slug() . '-payslip.pdf';
             $zip->addFromString($filename, $pdf->output());
