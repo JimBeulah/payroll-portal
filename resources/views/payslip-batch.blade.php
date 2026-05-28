@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Payslips — {{ $run->period_start->format('M d') }}–{{ $run->period_end->format('M d, Y') }}</title>
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -58,7 +59,6 @@
 
     /* --- Each payslip cell --- */
     .payslip-cell {
-        width: 105mm;
         height: 148.5mm;
         padding: 6mm;
         border: 1px dashed #ccc;
@@ -111,6 +111,7 @@
                         'entry'    => $entry,
                         'employee' => $entry->employee,
                         'run'      => $run,
+                        'logoSrc'  => asset('payroll-logo.png'),
                     ])
                 </div>
             @endforeach
