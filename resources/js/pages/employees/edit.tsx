@@ -51,6 +51,7 @@ export default function EmployeeEdit({ employee }: { employee: Employee }) {
                                     <SelectValue placeholder="Select gender" />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="">— None —</SelectItem>
                                     <SelectItem value="Male">Male</SelectItem>
                                     <SelectItem value="Female">Female</SelectItem>
                                 </SelectContent>
