@@ -90,7 +90,7 @@ export default function PayrollShow({ run, entries, uploads, availableEmployees 
                                 <Button onClick={downloadAllSlips}>Download All Payslips</Button>
                                 <Button
                                     variant="outline"
-                                    onClick={() => window.open(`/payroll-runs/${run.id}/payslips/print`, '_blank')}
+                                    onClick={() => window.open(`/payroll-runs/${run.id}/payslips/print`, '_blank', 'noopener,noreferrer')}
                                 >
                                     Print All Payslips
                                 </Button>
