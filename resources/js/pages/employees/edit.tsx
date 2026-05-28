@@ -46,12 +46,12 @@ export default function EmployeeEdit({ employee }: { employee: Employee }) {
                         </div>
                         <div>
                             <Label>Gender</Label>
-                            <Select value={data.gender} onValueChange={v => setData('gender', v)}>
+                            <Select value={data.gender || '_none'} onValueChange={v => setData('gender', v === '_none' ? '' : v)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select gender" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">— None —</SelectItem>
+                                    <SelectItem value="_none">— None —</SelectItem>
                                     <SelectItem value="Male">Male</SelectItem>
                                     <SelectItem value="Female">Female</SelectItem>
                                 </SelectContent>
