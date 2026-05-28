@@ -88,6 +88,12 @@ export default function PayrollShow({ run, entries, uploads, availableEmployees 
                         {isLocked && (
                             <>
                                 <Button onClick={downloadAllSlips}>Download All Payslips</Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => window.open(`/payroll-runs/${run.id}/payslips/print`, '_blank')}
+                                >
+                                    Print All Payslips
+                                </Button>
                                 <Button variant="outline"
                                     onClick={() => window.open(`/payroll-runs/${run.id}/export`, '_blank')}>
                                     Export Excel
