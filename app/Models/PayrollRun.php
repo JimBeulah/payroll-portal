@@ -11,9 +11,9 @@ class PayrollRun extends Model
     protected $fillable = ['period_start', 'period_end', 'payable_date', 'status', 'created_by'];
 
     protected $casts = [
-        'period_start' => 'date',
-        'period_end' => 'date',
-        'payable_date' => 'date',
+        'period_start' => 'date:Y-m-d',
+        'period_end' => 'date:Y-m-d',
+        'payable_date' => 'date:Y-m-d',
     ];
 
     public function entries()

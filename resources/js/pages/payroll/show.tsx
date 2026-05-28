@@ -1,33 +1,51 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { useState, useRef } from 'react';
 import { index } from '@/routes/payroll-runs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Upload, Calculator } from 'lucide-react';
 import PayrollSummaryTable, { PayrollEntry } from '@/components/payroll/payroll-summary-table';
 import DeductionSheet from '@/components/payroll/deduction-sheet';
+import AddEmployeeSheet, { AvailableEmployee } from '@/components/payroll/add-employee-sheet';
 
 interface PayrollRun {
     id: number; period_start: string; period_end: string;
     payable_date: string; status: 'draft' | 'locked';
 }
 
+interface AttendanceUpload {
+    id: number; filename: string; uploaded_at: string;
+}
+
 interface Props {
     run: PayrollRun;
     entries: PayrollEntry[];
+    uploads: AttendanceUpload[];
+    availableEmployees: AvailableEmployee[];
 }
 
-export default function PayrollShow({ run, entries }: Props) {
+export default function PayrollShow({ run, entries, uploads, availableEmployees }: Props) {
+    const { props } = usePage<{
+        errors: Record<string, string>;
+    }>();
+
     const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
+    const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
 
-    const { data, setData, processing } = useForm({ file: null as File | null });
-
-    function uploadFile(e: React.FormEvent) {
-        e.preventDefault();
-        if (!data.file) return;
+    function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploading(true);
         const form = new FormData();
-        form.append('file', data.file);
-        router.post(`/payroll-runs/${run.id}/upload`, form as any);
+        form.append('file', file);
+        router.post(`/payroll-runs/${run.id}/upload`, form as any, {
+            onFinish: () => {
+                setUploading(false);
+                if (fileRef.current) fileRef.current.value = '';
+            },
+        });
     }
 
     function compute() {
@@ -49,6 +67,7 @@ export default function PayrollShow({ run, entries }: Props) {
     }
 
     const isLocked = run.status === 'locked';
+    const errors = props.errors ?? {};
 
     return (
         <>
@@ -78,26 +97,99 @@ export default function PayrollShow({ run, entries }: Props) {
                     </div>
                 </div>
 
+                {errors.file && (
+                    <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+                        {errors.file}
+                    </div>
+                )}
+
                 {!isLocked && (
-                    <div className="border rounded-lg p-4 space-y-3">
-                        <h2 className="font-semibold">1. Upload Attendance File</h2>
-                        <form onSubmit={uploadFile} className="flex gap-2">
-                            <input
-                                ref={fileRef}
-                                type="file"
-                                accept=".xlsx,.xls"
-                                className="flex-1 text-sm"
-                                onChange={e => setData('file', e.target.files?.[0] ?? null)}
-                            />
-                            <Button type="submit" disabled={processing || !data.file}>Upload</Button>
-                        </form>
-                        <Button onClick={compute} variant="outline">2. Compute Payroll</Button>
+                    <div className="border rounded-lg divide-y">
+                        {/* Step 1 — Upload */}
+                        <div className="p-4 space-y-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Step 1</p>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    ref={fileRef}
+                                    type="file"
+                                    accept=".xlsx,.xls"
+                                    className="hidden"
+                                    onChange={handleFileSelected}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={uploading}
+                                    onClick={() => fileRef.current?.click()}
+                                >
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    {uploading ? 'Uploading…' : 'Upload Attendance File'}
+                                </Button>
+                                <span className="text-xs text-muted-foreground">Accepts .xlsx / .xls</span>
+                            </div>
+
+                            {uploads.length > 0 && (
+                                <div className="text-sm space-y-1">
+                                    {uploads.map(u => (
+                                        <div key={u.id} className="flex items-center gap-2">
+                                            <span className="text-green-600">✓</span>
+                                            <span className="font-medium">{u.filename}</span>
+                                            <span className="text-xs text-muted-foreground">
+                                                {new Date(u.uploaded_at).toLocaleString()}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                className="ml-1 text-xs text-red-500 hover:text-red-700 hover:underline"
+                                                onClick={() => {
+                                                    if (confirm(`Remove "${u.filename}"?`)) {
+                                                        router.delete(`/attendance-uploads/${u.id}`);
+                                                    }
+                                                }}
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Step 2 — Compute */}
+                        <div className="p-4 space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Step 2</p>
+                            <div className="flex items-center gap-3">
+                                <Button
+                                    onClick={compute}
+                                    disabled={uploads.length === 0}
+                                >
+                                    <Calculator className="w-4 h-4 mr-2" />
+                                    Compute Payroll
+                                </Button>
+                                {uploads.length === 0 && (
+                                    <span className="text-xs text-muted-foreground">
+                                        Upload an attendance file first
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
 
                 {entries.length > 0 && (
                     <div className="space-y-2">
-                        <h2 className="font-semibold">Payroll Summary</h2>
+                        <div className="flex items-center justify-between">
+                            <h2 className="font-semibold">Payroll Summary</h2>
+                            {!isLocked && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAddEmployeeOpen(true)}
+                                    disabled={availableEmployees.length === 0}
+                                >
+                                    + Add Employee
+                                </Button>
+                            )}
+                        </div>
                         <PayrollSummaryTable
                             entries={entries}
                             isLocked={isLocked}
@@ -112,6 +204,13 @@ export default function PayrollShow({ run, entries }: Props) {
                 entry={selectedEntry}
                 open={selectedEntry !== null}
                 onClose={() => setSelectedEntry(null)}
+            />
+
+            <AddEmployeeSheet
+                open={addEmployeeOpen}
+                onClose={() => setAddEmployeeOpen(false)}
+                payrollRunId={run.id}
+                employees={availableEmployees}
             />
         </>
     );

@@ -14,8 +14,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('employees', EmployeeController::class);
     Route::resource('holidays', HolidayController::class);
     Route::resource('payroll-runs', PayrollRunController::class);
+    Route::get('payroll-runs/{payrollRun}/debug', [PayrollRunController::class, 'debug'])->name('payroll-runs.debug');
     Route::post('payroll-runs/{payrollRun}/upload', [PayrollRunController::class, 'upload'])->name('payroll-runs.upload');
+    Route::delete('attendance-uploads/{attendanceUpload}', [PayrollRunController::class, 'destroyUpload'])->name('attendance-uploads.destroy');
     Route::post('payroll-runs/{payrollRun}/compute', [PayrollRunController::class, 'compute'])->name('payroll-runs.compute');
+    Route::post('payroll-runs/{payrollRun}/entries', [PayrollRunController::class, 'storeEntry'])->name('payroll-runs.entries.store');
     Route::post('payroll-runs/{payrollRun}/lock', [PayrollRunController::class, 'lock'])->name('payroll-runs.lock');
     Route::put('payroll-entries/{payrollEntry}', [PayrollEntryController::class, 'update'])->name('payroll-entries.update');
     Route::get('payroll-entries/{payrollEntry}/payslip', [PayslipController::class, 'download'])->name('payslip.download');

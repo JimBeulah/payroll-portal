@@ -20,22 +20,19 @@ class AttendanceParser
         $columns = [];
         $maxCol = Coordinate::columnIndexFromString($sheet->getHighestColumn());
 
-        $col = 5; // E = 5, start after Employee ID, Card No., Name, Department
-        while ($col <= $maxCol) {
-            $letter = Coordinate::stringFromColumnIndex($col);
+        // Start at column E (5) — past Employee ID, Card No., Name, Department
+        for ($col = 5; $col <= $maxCol; $col++) {
+            $letter  = Coordinate::stringFromColumnIndex($col);
             $dateRaw = $sheet->getCell($letter . '4')->getValue();
 
             if (empty($dateRaw)) {
-                $col++;
                 continue;
             }
 
-            // Normalize: "2026/05/01" → "2026-05-01"
+            // Normalize "2026/05/01" → "2026-05-01"
             $dateKey = str_replace('/', '-', trim((string) $dateRaw));
-            $ewLetter = Coordinate::stringFromColumnIndex($col + 1);
-
-            $columns[$dateKey] = ['sw' => $letter, 'ew' => $ewLetter];
-            $col += 2; // skip EW column
+            // Each date occupies exactly ONE column; SW and EW are both in that column's cell
+            $columns[$dateKey] = $letter;
         }
 
         return $columns;
@@ -44,62 +41,40 @@ class AttendanceParser
     private function parseEmployees($sheet, array $dateColumns): array
     {
         $employees = [];
-        $maxRow = (int) $sheet->getHighestRow();
+        $maxRow    = (int) $sheet->getHighestRow();
 
-        $row = 6;
-        while ($row <= $maxRow) {
-            $name = $sheet->getCell('C' . $row)->getValue();
+        // Data starts at row 6; each employee occupies exactly ONE row
+        for ($row = 6; $row <= $maxRow; $row++) {
+            $name = trim((string) $sheet->getCell('C' . $row)->getValue());
 
-            if (empty($name)) {
-                $row++;
+            if ($name === '') {
                 continue;
             }
 
-            $department = $sheet->getCell('D' . $row)->getValue();
+            $department = trim((string) $sheet->getCell('D' . $row)->getValue());
             $attendance = [];
 
-            foreach ($dateColumns as $date => ['sw' => $swCol, 'ew' => $ewCol]) {
-                $swRaw = $sheet->getCell($swCol . $row)->getValue();
-                // EW may be on same row or next row (merged cell variant)
-                $ewRaw = $sheet->getCell($ewCol . $row)->getValue()
-                    ?: $sheet->getCell($ewCol . ($row + 1))->getValue();
+            foreach ($dateColumns as $date => $col) {
+                $raw       = $sheet->getCell($col . $row)->getValue();
+                // Cell may contain multiple newline-separated entries; first line is the one we want
+                $firstLine = trim(explode("\n", (string) $raw)[0]);
 
-                $attendance[$date] = [
-                    'sw' => $this->parseTime($swRaw),
-                    'ew' => $this->parseTime($ewRaw),
-                ];
+                // Format: "HH:MM HH:MM" — both SW and EW on the same line
+                if (preg_match('/^(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})$/', $firstLine, $m)) {
+                    $attendance[$date] = ['sw' => $m[1], 'ew' => $m[2]];
+                } else {
+                    // Absent / dashes / empty
+                    $attendance[$date] = ['sw' => null, 'ew' => null];
+                }
             }
 
             $employees[] = [
-                'name' => trim((string) $name),
-                'department' => trim((string) $department),
+                'name'       => $name,
+                'department' => $department,
                 'attendance' => $attendance,
             ];
-
-            $row += 2; // each employee occupies 2 rows
         }
 
         return $employees;
-    }
-
-    private function parseTime(mixed $value): ?string
-    {
-        if (empty($value)) return null;
-
-        $str = trim((string) $value);
-
-        // Absent indicators: dashes, x, dots
-        if (preg_match('/^[-x.]+$/i', $str) || $str === '') return null;
-
-        // Already HH:MM string format
-        if (preg_match('/^\d{1,2}:\d{2}$/', $str)) return $str;
-
-        // Excel numeric time (fraction of 24h, e.g., 0.333 = 08:00)
-        if (is_numeric($value)) {
-            $totalMinutes = (int) round((float) $value * 24 * 60);
-            return sprintf('%02d:%02d', intdiv($totalMinutes, 60), $totalMinutes % 60);
-        }
-
-        return null;
     }
 }
