@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,12 +19,30 @@ interface Holiday {
 
 type DialogMode = 'create' | 'edit' | 'delete' | null;
 
+const PAGE_SIZE = 10;
+
 export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
     const [mode, setMode] = useState<DialogMode>(null);
     const [target, setTarget] = useState<Holiday | null>(null);
 
+    const [search, setSearch] = useState('');
+    const [typeFilter, setTypeFilter] = useState('all');
+    const [page, setPage] = useState(1);
+
     const createForm = useForm({ name: '', date: '', type: 'regular' });
     const editForm = useForm({ name: '', date: '', type: 'regular' });
+
+    const filtered = useMemo(() => {
+        const q = search.toLowerCase();
+        return holidays.filter(h => {
+            const matchesSearch = !q || h.name.toLowerCase().includes(q) || h.date.includes(q);
+            const matchesType = typeFilter === 'all' || h.type === typeFilter;
+            return matchesSearch && matchesType;
+        });
+    }, [holidays, search, typeFilter]);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     function openCreate() {
         createForm.reset();
@@ -70,6 +88,27 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
                     <h1 className="text-2xl font-bold">Holidays</h1>
                     <Button onClick={openCreate}>Add Holiday</Button>
                 </div>
+
+                {/* Search & Filter */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <Input
+                        placeholder="Search by name or date…"
+                        value={search}
+                        onChange={e => { setSearch(e.target.value); setPage(1); }}
+                        className="max-w-sm"
+                    />
+                    <Select value={typeFilter} onValueChange={v => { setTypeFilter(v); setPage(1); }}>
+                        <SelectTrigger className="w-44">
+                            <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value="regular">Regular (2×)</SelectItem>
+                            <SelectItem value="special">Special (1.3×)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -80,23 +119,48 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {holidays.map((h) => (
-                            <TableRow key={h.id}>
-                                <TableCell>{h.name}</TableCell>
-                                <TableCell>{h.date}</TableCell>
-                                <TableCell>
-                                    <Badge variant={h.type === 'regular' ? 'default' : 'secondary'}>
-                                        {h.type === 'regular' ? 'Regular (2×)' : 'Special (1.3×)'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="space-x-2">
-                                    <Button variant="outline" size="sm" onClick={() => openEdit(h)}>Edit</Button>
-                                    <Button variant="destructive" size="sm" onClick={() => openDelete(h)}>Delete</Button>
+                        {paginated.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                    No holidays found.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            paginated.map((h) => (
+                                <TableRow key={h.id}>
+                                    <TableCell>{h.name}</TableCell>
+                                    <TableCell>{h.date}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={h.type === 'regular' ? 'default' : 'secondary'}>
+                                            {h.type === 'regular' ? 'Regular (2×)' : 'Special (1.3×)'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="space-x-2">
+                                        <Button variant="outline" size="sm" onClick={() => openEdit(h)}>Edit</Button>
+                                        <Button variant="destructive" size="sm" onClick={() => openDelete(h)}>Delete</Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>
+                        {filtered.length === 0
+                            ? 'No results'
+                            : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} of ${filtered.length} holiday${filtered.length !== 1 ? 's' : ''}`}
+                    </span>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>
+                            Previous
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>
+                            Next
+                        </Button>
+                    </div>
+                </div>
             </div>
 
             {/* Create Dialog */}

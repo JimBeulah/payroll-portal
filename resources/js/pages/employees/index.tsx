@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import InputError from '@/components/input-error';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,12 +21,32 @@ interface Employee {
 
 type DialogMode = 'create' | 'edit' | 'delete' | null;
 
+const PAGE_SIZE = 10;
+
 export default function EmployeesIndex({ employees }: { employees: Employee[] }) {
     const [mode, setMode] = useState<DialogMode>(null);
     const [target, setTarget] = useState<Employee | null>(null);
 
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [page, setPage] = useState(1);
+
     const createForm = useForm({ name: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
     const editForm = useForm({ name: '', department: '', daily_rate: '', shift_start: '', shift_end: '' });
+
+    const filtered = useMemo(() => {
+        const q = search.toLowerCase();
+        return employees.filter(emp => {
+            const matchesSearch = !q || emp.name.toLowerCase().includes(q) || emp.department.toLowerCase().includes(q);
+            const matchesStatus =
+                statusFilter === 'all' ||
+                (statusFilter === 'active' ? emp.is_active : !emp.is_active);
+            return matchesSearch && matchesStatus;
+        });
+    }, [employees, search, statusFilter]);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     function openCreate() {
         createForm.setData({ name: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
@@ -78,6 +99,27 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                     <h1 className="text-2xl font-bold">Employees</h1>
                     <Button onClick={openCreate}>Add Employee</Button>
                 </div>
+
+                {/* Search & Filter */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <Input
+                        placeholder="Search by name or department…"
+                        value={search}
+                        onChange={e => { setSearch(e.target.value); setPage(1); }}
+                        className="max-w-sm"
+                    />
+                    <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
+                        <SelectTrigger className="w-40">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -90,21 +132,46 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {employees.map((emp) => (
-                            <TableRow key={emp.id}>
-                                <TableCell>{emp.name}</TableCell>
-                                <TableCell>{emp.department}</TableCell>
-                                <TableCell>₱{Number(emp.daily_rate).toLocaleString()}</TableCell>
-                                <TableCell>{emp.shift_start} – {emp.shift_end}</TableCell>
-                                <TableCell>{emp.is_active ? 'Active' : 'Inactive'}</TableCell>
-                                <TableCell className="space-x-2">
-                                    <Button variant="outline" size="sm" onClick={() => openEdit(emp)}>Edit</Button>
-                                    <Button variant="destructive" size="sm" onClick={() => openDelete(emp)}>Delete</Button>
+                        {paginated.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                    No employees found.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            paginated.map((emp) => (
+                                <TableRow key={emp.id}>
+                                    <TableCell>{emp.name}</TableCell>
+                                    <TableCell>{emp.department}</TableCell>
+                                    <TableCell>₱{Number(emp.daily_rate).toLocaleString()}</TableCell>
+                                    <TableCell>{emp.shift_start} – {emp.shift_end}</TableCell>
+                                    <TableCell>{emp.is_active ? 'Active' : 'Inactive'}</TableCell>
+                                    <TableCell className="space-x-2">
+                                        <Button variant="outline" size="sm" onClick={() => openEdit(emp)}>Edit</Button>
+                                        <Button variant="destructive" size="sm" onClick={() => openDelete(emp)}>Delete</Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>
+                        {filtered.length === 0
+                            ? 'No results'
+                            : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} of ${filtered.length} employee${filtered.length !== 1 ? 's' : ''}`}
+                    </span>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>
+                            Previous
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>
+                            Next
+                        </Button>
+                    </div>
+                </div>
             </div>
 
             {/* Create Dialog */}
