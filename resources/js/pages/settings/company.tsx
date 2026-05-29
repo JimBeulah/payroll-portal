@@ -92,7 +92,7 @@ export default function Company({ company_name, logo_url }: Props) {
                             className="cursor-pointer"
                         />
                         <p className="text-sm text-muted-foreground">
-                            PNG, JPG, GIF or SVG. Max 2 MB. Recommended: 200 &times; 80 px.
+                            PNG, JPG, GIF or SVG. Max 2 MB.
                         </p>
                         <InputError message={errors.logo} />
                     </div>
