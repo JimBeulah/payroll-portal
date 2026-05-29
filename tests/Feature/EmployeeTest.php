@@ -29,11 +29,11 @@ class EmployeeTest extends TestCase
     public function test_can_create_employee(): void
     {
         $response = $this->actingAsAdmin()->post('/employees', [
-            'name' => 'Juan Dela Cruz',
-            'department' => 'ADMIN',
-            'daily_rate' => 550.00,
+            'name'        => 'Juan Dela Cruz',
+            'department'  => 'ADMIN',
+            'daily_rate'  => 550.00,
             'shift_start' => '08:00',
-            'shift_end' => '17:00',
+            'shift_end'   => '17:00',
         ]);
         $response->assertRedirect('/employees');
         $this->assertDatabaseHas('employees', ['name' => 'Juan Dela Cruz']);
@@ -43,11 +43,11 @@ class EmployeeTest extends TestCase
     {
         $employee = Employee::factory()->create();
         $response = $this->actingAsAdmin()->put("/employees/{$employee->id}", [
-            'name' => 'Updated Name',
-            'department' => 'ADMIN',
-            'daily_rate' => 600.00,
+            'name'        => 'Updated Name',
+            'department'  => 'ADMIN',
+            'daily_rate'  => 600.00,
             'shift_start' => '08:00',
-            'shift_end' => '17:00',
+            'shift_end'   => '17:00',
         ]);
         $response->assertRedirect('/employees');
         $this->assertDatabaseHas('employees', ['id' => $employee->id, 'name' => 'Updated Name']);
@@ -59,5 +59,21 @@ class EmployeeTest extends TestCase
         $response = $this->actingAsAdmin()->delete("/employees/{$employee->id}");
         $response->assertRedirect('/employees');
         $this->assertDatabaseMissing('employees', ['id' => $employee->id]);
+    }
+
+    public function test_employee_number_must_be_unique(): void
+    {
+        Employee::factory()->create(['employee_number' => 'EMP-001']);
+
+        $response = $this->actingAsAdmin()->post('/employees', [
+            'name'            => 'Another Employee',
+            'employee_number' => 'EMP-001',
+            'department'      => 'ADMIN',
+            'daily_rate'      => 500.00,
+            'shift_start'     => '08:00',
+            'shift_end'       => '17:00',
+        ]);
+
+        $response->assertSessionHasErrors('employee_number');
     }
 }

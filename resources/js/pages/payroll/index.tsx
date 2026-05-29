@@ -24,7 +24,8 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
     const createForm = useForm({ period_start: '', period_end: '', payable_date: '' });
 
     function openCreate() {
-        createForm.reset();
+        createForm.setData({ period_start: '', period_end: '', payable_date: '' });
+        createForm.clearErrors();
         setCreateOpen(true);
     }
 

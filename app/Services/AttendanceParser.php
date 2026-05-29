@@ -3,12 +3,21 @@ namespace App\Services;
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Reader\Exception as SpreadsheetException;
 
 class AttendanceParser
 {
+    /**
+     * @throws \RuntimeException if the file cannot be read or parsed
+     */
     public function parse(string $filePath): array
     {
-        $spreadsheet = IOFactory::load($filePath);
+        try {
+            $spreadsheet = IOFactory::load($filePath);
+        } catch (SpreadsheetException $e) {
+            throw new \RuntimeException("Could not read attendance file: {$e->getMessage()}", 0, $e);
+        }
+
         $sheet = $spreadsheet->getActiveSheet();
 
         $dateColumns = $this->detectDateColumns($sheet);
@@ -18,7 +27,7 @@ class AttendanceParser
     private function detectDateColumns($sheet): array
     {
         $columns = [];
-        $maxCol = Coordinate::columnIndexFromString($sheet->getHighestColumn());
+        $maxCol  = Coordinate::columnIndexFromString($sheet->getHighestColumn());
 
         // Start at column E (5) — past Employee ID, Card No., Name, Department
         for ($col = 5; $col <= $maxCol; $col++) {
@@ -30,8 +39,7 @@ class AttendanceParser
             }
 
             // Normalize "2026/05/01" → "2026-05-01"
-            $dateKey = str_replace('/', '-', trim((string) $dateRaw));
-            // Each date occupies exactly ONE column; SW and EW are both in that column's cell
+            $dateKey           = str_replace('/', '-', trim((string) $dateRaw));
             $columns[$dateKey] = $letter;
         }
 

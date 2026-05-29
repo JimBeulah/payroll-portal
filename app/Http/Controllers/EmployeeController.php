@@ -23,7 +23,7 @@ class EmployeeController extends Controller
     public function store(StoreEmployeeRequest $request)
     {
         Employee::create($request->validated());
-        return redirect('/employees')->with('success', 'Employee created.');
+        return redirect()->route('employees.index')->with('success', 'Employee created.');
     }
 
     public function edit(Employee $employee)
@@ -34,12 +34,12 @@ class EmployeeController extends Controller
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
         $employee->update($request->validated());
-        return redirect('/employees')->with('success', 'Employee updated.');
+        return redirect()->route('employees.index')->with('success', 'Employee updated.');
     }
 
     public function destroy(Employee $employee)
     {
         $employee->delete();
-        return redirect('/employees')->with('success', 'Employee deleted.');
+        return redirect()->route('employees.index')->with('success', 'Employee deleted.');
     }
 }

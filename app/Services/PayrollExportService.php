@@ -47,8 +47,7 @@ class PayrollExportService
             $sheet->setCellValue('M' . $row, $entry->total_deductions);
             $sheet->setCellValue('N' . $row, $entry->first_release);
             $sheet->setCellValue('O' . $row, $entry->second_release);
-            $balance = $entry->net_pay - $entry->first_release - $entry->second_release;
-            $sheet->setCellValue('P' . $row, $balance);
+            $sheet->setCellValue('P' . $row, $entry->balance);
             $sheet->setCellValue('Q' . $row, $entry->net_pay);
             $row++;
         }

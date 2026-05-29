@@ -8,7 +8,7 @@ class PayrollRun extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['period_start', 'period_end', 'payable_date', 'status', 'created_by'];
+    protected $fillable = ['period_start', 'period_end', 'payable_date', 'status'];
 
     protected $casts = [
         'period_start' => 'date:Y-m-d',

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AttendanceUpload extends Model
 {
-    protected $fillable = ['payroll_run_id', 'filename', 'uploaded_at'];
+    protected $fillable = ['payroll_run_id', 'filename', 'storage_path', 'uploaded_at'];
 
     protected $casts = ['uploaded_at' => 'datetime'];
 

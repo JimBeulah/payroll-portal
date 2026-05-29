@@ -28,7 +28,8 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
     const editForm = useForm({ name: '', department: '', daily_rate: '', shift_start: '', shift_end: '' });
 
     function openCreate() {
-        createForm.reset();
+        createForm.setData({ name: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
+        createForm.clearErrors();
         setMode('create');
     }
 
