@@ -2,10 +2,10 @@
 <table style="width:100%;border-collapse:collapse;">
     <tr>
         <td style="width:64px;vertical-align:middle;padding-right:6px;">
-            <img src="{{ $logoSrc ?? public_path('payroll-logo.png') }}" alt="Logo" style="width:60px;height:auto;">
+            <img src="{{ $logoSrc ?? asset('payroll-logo.png') }}" alt="Logo" crossorigin="anonymous" style="width:60px;height:auto;">
         </td>
         <td style="text-align:center;vertical-align:middle;">
-            <div style="font-weight:bold;font-size:1.1em;">Beulah Information Technology Services and Business Solutions Inc.</div>
+            <div style="font-weight:bold;font-size:1.1em;">{{ $companyName }}</div>
             <div style="font-weight:bold;">
                 Payslip for the month of
                 {{ $run->period_start->format('F') }}

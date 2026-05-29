@@ -108,10 +108,11 @@
             @foreach ($pageEntries as $entry)
                 <div class="payslip-cell">
                     @include('payslip._card', [
-                        'entry'    => $entry,
-                        'employee' => $entry->employee,
-                        'run'      => $run,
-                        'logoSrc'  => asset('payroll-logo.png'),
+                        'entry'       => $entry,
+                        'employee'    => $entry->employee,
+                        'run'         => $run,
+                        'companyName' => $companyName,
+                        'logoSrc'     => $logoSrc,
                     ])
                 </div>
             @endforeach
