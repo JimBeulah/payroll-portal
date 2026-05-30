@@ -94,7 +94,7 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Period</TableHead>
-                            <TableHead>Payable Date</TableHead>
+                            <TableHead>Payable Date (yyyy/mm/dd)</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead />
                         </TableRow>

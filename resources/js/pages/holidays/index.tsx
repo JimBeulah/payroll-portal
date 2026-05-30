@@ -113,7 +113,7 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Name</TableHead>
-                            <TableHead>Date</TableHead>
+                            <TableHead>Date (yyyy/mm/dd)</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead />
                         </TableRow>
