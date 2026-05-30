@@ -35,12 +35,12 @@ export default function EmployeeCreate() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label>Employee Number</Label>
+                            <Label>Employee Number <span className="text-muted-foreground font-normal">(optional)</span></Label>
                             <Input value={data.employee_number} onChange={e => setData('employee_number', e.target.value)} placeholder="e.g. EMP-001" />
                             <InputError message={errors.employee_number} />
                         </div>
                         <div>
-                            <Label>Gender</Label>
+                            <Label>Gender <span className="text-muted-foreground font-normal">(optional)</span></Label>
                             <Select value={data.gender || '_none'} onValueChange={v => setData('gender', v === '_none' ? '' : v)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select gender" />
@@ -55,7 +55,7 @@ export default function EmployeeCreate() {
                         </div>
                     </div>
                     <div>
-                        <Label>Department</Label>
+                        <Label>Department <span className="text-muted-foreground font-normal">(optional)</span></Label>
                         <Input value={data.department} onChange={e => setData('department', e.target.value)} />
                         <InputError message={errors.department} />
                     </div>

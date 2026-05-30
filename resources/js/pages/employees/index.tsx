@@ -12,7 +12,9 @@ import { index } from '@/routes/employees';
 interface Employee {
     id: number;
     name: string;
-    department: string;
+    employee_number: string | null;
+    gender: string | null;
+    department: string | null;
     daily_rate: string;
     shift_start: string;
     shift_end: string;
@@ -31,13 +33,13 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
     const [statusFilter, setStatusFilter] = useState('all');
     const [page, setPage] = useState(1);
 
-    const createForm = useForm({ name: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
-    const editForm = useForm({ name: '', department: '', daily_rate: '', shift_start: '', shift_end: '' });
+    const createForm = useForm({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
+    const editForm = useForm({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '', shift_end: '' });
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
         return employees.filter(emp => {
-            const matchesSearch = !q || emp.name.toLowerCase().includes(q) || emp.department.toLowerCase().includes(q);
+            const matchesSearch = !q || emp.name.toLowerCase().includes(q) || (emp.department ?? '').toLowerCase().includes(q);
             const matchesStatus =
                 statusFilter === 'all' ||
                 (statusFilter === 'active' ? emp.is_active : !emp.is_active);
@@ -49,7 +51,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
     const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     function openCreate() {
-        createForm.setData({ name: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
+        createForm.setData({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
         createForm.clearErrors();
         setMode('create');
     }
@@ -58,7 +60,9 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
         editForm.clearErrors();
         editForm.setData({
             name: emp.name,
-            department: emp.department,
+            employee_number: emp.employee_number ?? '',
+            gender: emp.gender ?? '',
+            department: emp.department ?? '',
             daily_rate: emp.daily_rate,
             shift_start: emp.shift_start.slice(0, 5),
             shift_end: emp.shift_end.slice(0, 5),
@@ -142,7 +146,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                             paginated.map((emp) => (
                                 <TableRow key={emp.id}>
                                     <TableCell>{emp.name}</TableCell>
-                                    <TableCell>{emp.department}</TableCell>
+                                    <TableCell>{emp.department ?? <span className="text-muted-foreground">—</span>}</TableCell>
                                     <TableCell>₱{Number(emp.daily_rate).toLocaleString()}</TableCell>
                                     <TableCell>{emp.shift_start} – {emp.shift_end}</TableCell>
                                     <TableCell>{emp.is_active ? 'Active' : 'Inactive'}</TableCell>
@@ -186,8 +190,29 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                             <Input value={createForm.data.name} onChange={e => createForm.setData('name', e.target.value)} />
                             <InputError message={createForm.errors.name} />
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label>Employee Number <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                <Input value={createForm.data.employee_number} onChange={e => createForm.setData('employee_number', e.target.value)} placeholder="e.g. EMP-001" />
+                                <InputError message={createForm.errors.employee_number} />
+                            </div>
+                            <div>
+                                <Label>Gender <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                <Select value={createForm.data.gender || '_none'} onValueChange={v => createForm.setData('gender', v === '_none' ? '' : v)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select gender" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="_none">— None —</SelectItem>
+                                        <SelectItem value="Male">Male</SelectItem>
+                                        <SelectItem value="Female">Female</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={createForm.errors.gender} />
+                            </div>
+                        </div>
                         <div>
-                            <Label>Department</Label>
+                            <Label>Department <span className="text-muted-foreground font-normal">(optional)</span></Label>
                             <Input value={createForm.data.department} onChange={e => createForm.setData('department', e.target.value)} />
                             <InputError message={createForm.errors.department} />
                         </div>
@@ -228,8 +253,29 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                             <Input value={editForm.data.name} onChange={e => editForm.setData('name', e.target.value)} />
                             <InputError message={editForm.errors.name} />
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label>Employee Number <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                <Input value={editForm.data.employee_number} onChange={e => editForm.setData('employee_number', e.target.value)} placeholder="e.g. EMP-001" />
+                                <InputError message={editForm.errors.employee_number} />
+                            </div>
+                            <div>
+                                <Label>Gender <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                <Select value={editForm.data.gender || '_none'} onValueChange={v => editForm.setData('gender', v === '_none' ? '' : v)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select gender" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="_none">— None —</SelectItem>
+                                        <SelectItem value="Male">Male</SelectItem>
+                                        <SelectItem value="Female">Female</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={editForm.errors.gender} />
+                            </div>
+                        </div>
                         <div>
-                            <Label>Department</Label>
+                            <Label>Department <span className="text-muted-foreground font-normal">(optional)</span></Label>
                             <Input value={editForm.data.department} onChange={e => editForm.setData('department', e.target.value)} />
                             <InputError message={editForm.errors.department} />
                         </div>
