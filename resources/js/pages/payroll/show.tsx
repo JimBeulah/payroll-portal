@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, Calculator } from 'lucide-react';
 import PayrollSummaryTable, { PayrollEntry } from '@/components/payroll/payroll-summary-table';
 import DeductionSheet from '@/components/payroll/deduction-sheet';
-import AddEmployeeSheet, { AvailableEmployee } from '@/components/payroll/add-employee-sheet';
 
 interface PayrollRun {
     id: number; period_start: string; period_end: string;
@@ -21,16 +20,14 @@ interface Props {
     run: PayrollRun;
     entries: PayrollEntry[];
     uploads: AttendanceUpload[];
-    availableEmployees: AvailableEmployee[];
 }
 
-export default function PayrollShow({ run, entries, uploads, availableEmployees }: Props) {
+export default function PayrollShow({ run, entries, uploads }: Props) {
     const { props } = usePage<{
         errors: Record<string, string>;
     }>();
 
     const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
-    const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -192,16 +189,6 @@ export default function PayrollShow({ run, entries, uploads, availableEmployees 
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <h2 className="font-semibold">Payroll Summary</h2>
-                            {!isLocked && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setAddEmployeeOpen(true)}
-                                    disabled={availableEmployees.length === 0}
-                                >
-                                    + Add Employee
-                                </Button>
-                            )}
                         </div>
                         <PayrollSummaryTable
                             entries={entries}
@@ -219,12 +206,6 @@ export default function PayrollShow({ run, entries, uploads, availableEmployees 
                 onClose={() => setSelectedEntry(null)}
             />
 
-            <AddEmployeeSheet
-                open={addEmployeeOpen}
-                onClose={() => setAddEmployeeOpen(false)}
-                payrollRunId={run.id}
-                employees={availableEmployees}
-            />
         </>
     );
 }

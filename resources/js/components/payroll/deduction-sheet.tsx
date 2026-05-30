@@ -31,8 +31,6 @@ export default function DeductionSheet({ entry, open, onClose }: Props) {
     const { data, setData, put, processing, errors, reset } = useForm({
         cash_advance: '0',
         other_deductions: '0',
-        first_release: '0',
-        second_release: '0',
     });
 
     useEffect(() => {
@@ -40,8 +38,6 @@ export default function DeductionSheet({ entry, open, onClose }: Props) {
             setData({
                 cash_advance: entry.cash_advance,
                 other_deductions: entry.other_deductions,
-                first_release: entry.first_release,
-                second_release: entry.second_release,
             });
         }
     }, [entry?.id]);
@@ -115,35 +111,6 @@ export default function DeductionSheet({ entry, open, onClose }: Props) {
                             <InputError message={errors.other_deductions} />
                         </div>
 
-                        <Separator />
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Release Schedule</p>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="first_release">1st Release (₱)</Label>
-                                <Input
-                                    id="first_release"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={data.first_release}
-                                    onChange={e => setData('first_release', e.target.value)}
-                                />
-                                <InputError message={errors.first_release} />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="second_release">2nd Release (₱)</Label>
-                                <Input
-                                    id="second_release"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={data.second_release}
-                                    onChange={e => setData('second_release', e.target.value)}
-                                />
-                                <InputError message={errors.second_release} />
-                            </div>
-                        </div>
                     </div>
 
                     <div className="px-6 py-4 border-t bg-background">

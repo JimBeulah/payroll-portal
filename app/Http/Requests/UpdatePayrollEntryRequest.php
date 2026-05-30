@@ -12,8 +12,6 @@ class UpdatePayrollEntryRequest extends FormRequest
         return [
             'cash_advance'     => ['required', 'numeric', 'min:0'],
             'other_deductions' => ['required', 'numeric', 'min:0'],
-            'first_release'    => ['required', 'numeric', 'min:0'],
-            'second_release'   => ['required', 'numeric', 'min:0'],
         ];
     }
 }

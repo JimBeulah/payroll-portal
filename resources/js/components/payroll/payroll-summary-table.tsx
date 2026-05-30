@@ -15,8 +15,6 @@ export interface PayrollEntry {
     other_deductions: string;
     total_deductions: string;
     net_pay: string;
-    first_release: string;
-    second_release: string;
 }
 
 function fmt(v: string) {
@@ -47,8 +45,6 @@ export default function PayrollSummaryTable({ entries, isLocked, onEdit, onDownl
                         <TableHead className="text-right min-w-[100px]">Gross Pay</TableHead>
                         <TableHead className="text-right min-w-[100px]">Deductions</TableHead>
                         <TableHead className="text-right min-w-[100px]">Net Pay</TableHead>
-                        <TableHead className="text-right min-w-[100px]">1st Release</TableHead>
-                        <TableHead className="text-right min-w-[100px]">2nd Release</TableHead>
                         <TableHead className="sticky right-0 z-10 bg-background min-w-[80px]" />
                     </TableRow>
                 </TableHeader>
@@ -66,8 +62,6 @@ export default function PayrollSummaryTable({ entries, isLocked, onEdit, onDownl
                             <TableCell className="text-right font-semibold">{fmt(e.gross_pay)}</TableCell>
                             <TableCell className="text-right text-red-600">({fmt(e.total_deductions)})</TableCell>
                             <TableCell className="text-right font-bold">{fmt(e.net_pay)}</TableCell>
-                            <TableCell className="text-right">{fmt(e.first_release)}</TableCell>
-                            <TableCell className="text-right">{fmt(e.second_release)}</TableCell>
                             <TableCell className="sticky right-0 z-10 bg-background space-x-1">
                                 {!isLocked && onEdit && (
                                     <Button variant="outline" size="sm" onClick={() => onEdit(e)}>
