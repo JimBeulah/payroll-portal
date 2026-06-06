@@ -12,12 +12,10 @@ RUN apk add --no-cache \
         postgresql-dev \
         nodejs \
         npm \
-        sqlite \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         gd \
         pdo \
-        pdo_sqlite \
         pdo_pgsql \
         bcmath \
         zip \
@@ -57,6 +55,6 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
 
 EXPOSE 8000
 
-# At runtime: ensure SQLite file exists, run migrations, then start the server.
-# Railway env vars (APP_KEY, APP_URL, etc.) override .env values automatically.
-CMD sh -c "touch database/database.sqlite && php artisan migrate --force && php artisan config:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"
+# At runtime: run migrations then start the server.
+# Railway injects Postgres env vars (DB_HOST, DB_PORT, etc.) automatically.
+CMD sh -c "php artisan migrate --force && php artisan config:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"
