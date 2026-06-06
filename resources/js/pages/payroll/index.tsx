@@ -9,6 +9,7 @@ import InputError from '@/components/input-error';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { index } from '@/routes/payroll-runs';
+import { formatDate } from '@/lib/utils';
 
 interface PayrollRun {
     id: number;
@@ -109,8 +110,8 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
                         ) : (
                             paginated.map((run) => (
                                 <TableRow key={run.id}>
-                                    <TableCell>{run.period_start} – {run.period_end}</TableCell>
-                                    <TableCell>{run.payable_date}</TableCell>
+                                    <TableCell>{formatDate(run.period_start)} – {formatDate(run.period_end)}</TableCell>
+                                    <TableCell>{formatDate(run.payable_date)}</TableCell>
                                     <TableCell>
                                         <Badge variant={run.status === 'locked' ? 'default' : 'secondary'}>
                                             {run.status}
@@ -187,7 +188,7 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
                         <DialogTitle>Delete Payroll Run</DialogTitle>
                         <DialogDescription>
                             Are you sure you want to delete the payroll run for{' '}
-                            <strong>{deleteTarget?.period_start} – {deleteTarget?.period_end}</strong>?
+                            <strong>{deleteTarget ? formatDate(deleteTarget.period_start) : ''} – {deleteTarget ? formatDate(deleteTarget.period_end) : ''}</strong>?
                             This cannot be undone.
                         </DialogDescription>
                     </DialogHeader>

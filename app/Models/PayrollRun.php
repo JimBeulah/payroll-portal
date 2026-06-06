@@ -26,6 +26,11 @@ class PayrollRun extends Model
         return $this->hasMany(AttendanceUpload::class);
     }
 
+    public function manualAttendances()
+    {
+        return $this->hasMany(PayrollManualAttendance::class);
+    }
+
     public function isLocked(): bool
     {
         return $this->status === 'locked';

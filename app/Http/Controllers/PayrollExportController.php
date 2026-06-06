@@ -12,7 +12,9 @@ class PayrollExportController extends Controller
         abort_if(!$payrollRun->isLocked(), 403);
 
         $path     = (new PayrollExportService())->export($payrollRun);
-        $filename = "payroll-{$payrollRun->period_start}-{$payrollRun->period_end}.xlsx";
+        $start    = $payrollRun->period_start->format('M d, Y');
+        $end      = $payrollRun->period_end->format('M d, Y');
+        $filename = "payroll-{$start}-{$end}.xlsx";
 
         return Response::download($path, $filename)->deleteFileAfterSend(true);
     }

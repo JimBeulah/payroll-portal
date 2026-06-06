@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePayrollRunRequest;
+use App\Models\Employee;
 use App\Models\PayrollRun;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -31,12 +32,16 @@ class PayrollRunController extends Controller
 
     public function show(PayrollRun $payrollRun)
     {
-        $payrollRun->load('entries.employee', 'uploads');
+        $payrollRun->load('entries.employee', 'uploads', 'manualAttendances.employee');
 
         return Inertia::render('payroll/show', [
-            'run'     => $payrollRun,
-            'entries' => $payrollRun->entries,
-            'uploads' => $payrollRun->uploads,
+            'run'              => $payrollRun,
+            'entries'          => $payrollRun->entries,
+            'uploads'          => $payrollRun->uploads,
+            'manualAttendances' => $payrollRun->manualAttendances,
+            'employees'        => Employee::where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'department', 'shift_start', 'shift_end']),
         ]);
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\Holiday;
 use App\Models\PayrollEntry;
+use App\Models\PayrollManualAttendance;
 use App\Models\PayrollRun;
 use App\Services\AttendanceParser;
 use App\Services\PayrollCalculator;
@@ -17,49 +18,96 @@ class PayrollComputeController extends Controller
     {
         abort_if($payrollRun->isLocked(), 403);
 
+        $periodStart = $payrollRun->period_start->format('Y-m-d');
+        $periodEnd   = $payrollRun->period_end->format('Y-m-d');
+
+        $holidays = Holiday::whereBetween('date', [$periodStart, $periodEnd])->get();
+
+        // Build attendance map: employee_id → [date → times]
+        // Starts empty; populated from Excel then manual entries are merged in.
+        $attendanceByEmployee = [];  // [employee_id => ['employee' => Employee, 'days' => [date => times]]]
+
+        // --- Step 1: Parse Excel attendance file ---
         $upload = $payrollRun->uploads()->latest()->first();
 
-        if (!$upload || !$upload->storage_path) {
-            return back()->withErrors(['file' => 'Please upload an attendance file first.']);
+        if ($upload && $upload->storage_path) {
+            $fullPath = Storage::path($upload->storage_path);
+
+            if (file_exists($fullPath)) {
+                $parsed   = (new AttendanceParser())->parse($fullPath);
+                $unmatched = [];
+
+                foreach ($parsed as $row) {
+                    $employee = Employee::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($row['name']))])
+                        ->whereRaw('LOWER(TRIM(department)) = ?', [strtolower(trim($row['department']))])
+                        ->first();
+
+                    if (!$employee) {
+                        $unmatched[] = "{$row['name']} ({$row['department']})";
+                        continue;
+                    }
+
+                    $periodDays = array_filter(
+                        $row['attendance'],
+                        fn($date) => $date >= $periodStart && $date <= $periodEnd,
+                        ARRAY_FILTER_USE_KEY
+                    );
+
+                    $attendanceByEmployee[$employee->id] = [
+                        'employee' => $employee,
+                        'days'     => $periodDays,
+                    ];
+                }
+            }
         }
 
-        $fullPath = Storage::path($upload->storage_path);
+        // --- Step 2: Merge manual attendance entries ---
+        // If a manual entry exists for a date that is already in the Excel, the Excel
+        // entry for that date is REMOVED and replaced by the manual entry (or entries).
+        // This lets admins correct a reassigned shift without double-counting the day.
+        // For a true double-shift day, add two separate manual entries for that date.
+        $manualEntries = PayrollManualAttendance::with('employee')
+            ->where('payroll_run_id', $payrollRun->id)
+            ->whereBetween('date', [$periodStart, $periodEnd])
+            ->get();
 
-        if (!file_exists($fullPath)) {
-            return back()->withErrors(['file' => 'Attendance file not found. Please re-upload.']);
+        // Only drop the Excel entry for a date when the admin explicitly marked is_override=true.
+        // Additive entries (is_override=false, the default) stack on top — used for second shifts.
+        foreach ($manualEntries->where('is_override', true) as $entry) {
+            $empId = $entry->employee_id;
+            $date  = $entry->date->format('Y-m-d');
+            unset($attendanceByEmployee[$empId]['days'][$date]);
         }
 
-        $parsed = (new AttendanceParser())->parse($fullPath);
+        // Add manual entries (each uses its own shift_start/shift_end)
+        foreach ($manualEntries as $entry) {
+            $id = $entry->employee_id;
 
-        $holidays = Holiday::whereBetween('date', [
-            $payrollRun->period_start,
-            $payrollRun->period_end,
-        ])->get();
-
-        $calculator = new PayrollCalculator();
-        $unmatched  = [];
-        $entries    = [];
-
-        foreach ($parsed as $row) {
-            $employee = Employee::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($row['name']))])
-                ->whereRaw('LOWER(TRIM(department)) = ?', [strtolower(trim($row['department']))])
-                ->first();
-
-            if (!$employee) {
-                $unmatched[] = "{$row['name']} ({$row['department']})";
-                continue;
+            if (!isset($attendanceByEmployee[$id])) {
+                $attendanceByEmployee[$id] = [
+                    'employee' => $entry->employee,
+                    'days'     => [],
+                ];
             }
 
-            $periodStart = $payrollRun->period_start->format('Y-m-d');
-            $periodEnd   = $payrollRun->period_end->format('Y-m-d');
+            // Unique key per entry so two manual entries on the same date (double shift) both count
+            $dayKey = $entry->date->format('Y-m-d') . '_m' . $entry->id;
 
-            $periodAttendance = array_filter(
-                $row['attendance'],
-                fn($date) => $date >= $periodStart && $date <= $periodEnd,
-                ARRAY_FILTER_USE_KEY
-            );
+            $attendanceByEmployee[$id]['days'][$dayKey] = [
+                'sw'          => $entry->sw,
+                'ew'          => $entry->ew,
+                'shift_start' => $entry->shift_start,
+                'shift_end'   => $entry->shift_end,
+                '_date'       => $entry->date->format('Y-m-d'),
+            ];
+        }
 
-            $computed = $calculator->calculate($employee, $periodAttendance, $holidays);
+        // --- Step 3: Compute payroll for each employee ---
+        $calculator = new PayrollCalculator();
+        $entries    = [];
+
+        foreach ($attendanceByEmployee as ['employee' => $employee, 'days' => $days]) {
+            $computed = $calculator->calculate($employee, $days, $holidays);
 
             $entries[] = array_merge([
                 'payroll_run_id'   => $payrollRun->id,
@@ -82,7 +130,7 @@ class PayrollComputeController extends Controller
             }
         });
 
-        if (!empty($unmatched)) {
+        if (!empty($unmatched ?? [])) {
             return redirect()->route('payroll-runs.show', $payrollRun)
                 ->with('unmatched', $unmatched);
         }

@@ -148,7 +148,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                                     <TableCell>{emp.name}</TableCell>
                                     <TableCell>{emp.department ?? <span className="text-muted-foreground">—</span>}</TableCell>
                                     <TableCell>₱{Number(emp.daily_rate).toLocaleString()}</TableCell>
-                                    <TableCell>{emp.shift_start} – {emp.shift_end}</TableCell>
+                                    <TableCell>{emp.shift_start.slice(0, 5)} – {emp.shift_end.slice(0, 5)}</TableCell>
                                     <TableCell>{emp.is_active ? 'Active' : 'Inactive'}</TableCell>
                                     <TableCell className="space-x-2">
                                         <Button variant="outline" size="sm" onClick={() => openEdit(emp)}>Edit</Button>

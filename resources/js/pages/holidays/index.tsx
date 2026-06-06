@@ -9,6 +9,7 @@ import InputError from '@/components/input-error';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { index } from '@/routes/holidays';
+import { formatDate } from '@/lib/utils';
 
 interface Holiday {
     id: number;
@@ -113,7 +114,7 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Name</TableHead>
-                            <TableHead>Date (yyyy/mm/dd)</TableHead>
+                            <TableHead>Date</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead />
                         </TableRow>
@@ -129,7 +130,7 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
                             paginated.map((h) => (
                                 <TableRow key={h.id}>
                                     <TableCell>{h.name}</TableCell>
-                                    <TableCell>{h.date}</TableCell>
+                                    <TableCell>{formatDate(h.date)}</TableCell>
                                     <TableCell>
                                         <Badge variant={h.type === 'regular' ? 'default' : 'secondary'}>
                                             {h.type === 'regular' ? 'Regular (2×)' : 'Special (1.3×)'}

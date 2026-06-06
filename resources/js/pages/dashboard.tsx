@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { dashboard } from '@/routes';
+import { formatDate } from '@/lib/utils';
 
 interface Stats {
     total_employees: number;
@@ -298,10 +299,10 @@ export default function Dashboard({ stats, payrollTrend, departmentStats, recent
                                             </div>
                                             <div>
                                                 <p className="text-xs font-medium text-foreground leading-tight">
-                                                    {run.period_start} – {run.period_end}
+                                                    {formatDate(run.period_start)} – {formatDate(run.period_end)}
                                                 </p>
                                                 <p className="text-[11px] text-muted-foreground">
-                                                    {run.employee_count} employees · Due {run.payable_date}
+                                                    {run.employee_count} employees · Due {formatDate(run.payable_date)}
                                                 </p>
                                             </div>
                                         </div>

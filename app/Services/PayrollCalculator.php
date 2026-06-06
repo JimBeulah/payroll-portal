@@ -20,22 +20,33 @@ class PayrollCalculator
 
         $holidayMap = $holidays->keyBy(fn($h) => $h->date->format('Y-m-d'));
 
-        foreach ($attendanceDays as $date => $times) {
+        foreach ($attendanceDays as $dateKey => $times) {
             if (empty($times['sw']) || empty($times['ew'])) {
                 continue;
             }
 
+            // Manual entries carry a _date key because their dateKey includes an ID suffix
+            $date = $times['_date'] ?? $dateKey;
+
             $daysPresent++;
             $totalBasicPay += $employee->daily_rate;
 
-            // shift_start/shift_end stored as "08:00:00" — take first 5 chars
-            $shiftStartTime = substr($employee->shift_start, 0, 5);
-            $shiftEndTime   = substr($employee->shift_end, 0, 5);
+            // Per-day shift override (manual entries) takes priority over employee's default
+            $shiftStartTime = $times['shift_start'] ?? substr($employee->shift_start, 0, 5);
+            $shiftEndTime   = $times['shift_end']   ?? substr($employee->shift_end, 0, 5);
 
             $shiftStart  = Carbon::createFromFormat('Y-m-d H:i', "$date $shiftStartTime");
             $shiftEnd    = Carbon::createFromFormat('Y-m-d H:i', "$date $shiftEndTime");
             $actualStart = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['sw']}");
             $actualEnd   = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['ew']}");
+
+            // Night shift: if end is before start, it falls on the next calendar day
+            if ($shiftEnd->lte($shiftStart)) {
+                $shiftEnd->addDay();
+            }
+            if ($actualEnd->lte($actualStart)) {
+                $actualEnd->addDay();
+            }
 
             if ($actualStart->gt($shiftStart)) {
                 $lateMinutes += abs($actualStart->diffInMinutes($shiftStart));

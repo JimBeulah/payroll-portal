@@ -67,8 +67,11 @@ class AttendanceParser
                 // Cell may contain multiple newline-separated entries; first line is the one we want
                 $firstLine = trim(explode("\n", (string) $raw)[0]);
 
-                // Format: "HH:MM HH:MM" — both SW and EW on the same line
-                if (preg_match('/^(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})$/', $firstLine, $m)) {
+                // Format: "HH:MM HH:MM" — both SW and EW on the same line.
+                // Exclude 00:00 / 0:00 which attendance systems use to represent "no punch".
+                if (preg_match('/^(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})$/', $firstLine, $m)
+                    && !in_array($m[1], ['0:00', '00:00'])
+                    && !in_array($m[2], ['0:00', '00:00'])) {
                     $attendance[$date] = ['sw' => $m[1], 'ew' => $m[2]];
                 } else {
                     // Absent / dashes / empty

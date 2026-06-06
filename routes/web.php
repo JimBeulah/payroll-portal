@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttendanceUploadController;
+use App\Http\Controllers\PayrollManualAttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
@@ -24,6 +25,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('payroll-runs/{payrollRun}/upload', [AttendanceUploadController::class, 'store'])->name('payroll-runs.upload');
     Route::delete('attendance-uploads/{attendanceUpload}', [AttendanceUploadController::class, 'destroy'])->name('attendance-uploads.destroy');
+
+    Route::post('payroll-runs/{payrollRun}/manual-attendances', [PayrollManualAttendanceController::class, 'store'])->name('payroll-runs.manual-attendances.store');
+    Route::put('payroll-manual-attendances/{payrollManualAttendance}', [PayrollManualAttendanceController::class, 'update'])->name('payroll-manual-attendances.update');
+    Route::delete('payroll-manual-attendances/{payrollManualAttendance}', [PayrollManualAttendanceController::class, 'destroy'])->name('payroll-manual-attendances.destroy');
 
     Route::post('payroll-runs/{payrollRun}/compute', [PayrollComputeController::class, 'store'])->name('payroll-runs.compute');
 
