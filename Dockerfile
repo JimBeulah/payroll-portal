@@ -10,6 +10,7 @@ RUN apk add --no-cache \
         freetype-dev \
         libzip-dev \
         postgresql-dev \
+        oniguruma-dev \
         nodejs \
         npm \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
