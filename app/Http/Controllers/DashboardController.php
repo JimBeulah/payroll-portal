@@ -34,7 +34,7 @@ class DashboardController extends Controller
             ->limit(8)
             ->get()
             ->map(fn($run) => [
-                'label'          => $run->period_start->format('M d'),
+                'label'          => $run->payable_date->format('M d'),
                 'net_pay'        => round((float) $run->entries->sum('net_pay'), 2),
                 'gross_pay'      => round((float) $run->entries->sum('gross_pay'), 2),
                 'employee_count' => $run->entries->count(),
@@ -60,9 +60,9 @@ class DashboardController extends Controller
             ->get()
             ->map(fn($run) => [
                 'id'             => $run->id,
-                'period_start'   => $run->period_start->format('M d, Y'),
-                'period_end'     => $run->period_end->format('M d, Y'),
-                'payable_date'   => $run->payable_date->format('M d, Y'),
+                'period_start'   => $run->period_start->format('Y-m-d'),
+                'period_end'     => $run->period_end->format('Y-m-d'),
+                'payable_date'   => $run->payable_date->format('Y-m-d'),
                 'status'         => $run->status,
                 'net_pay'        => round((float) $run->entries->sum('net_pay'), 2),
                 'employee_count' => $run->entries->count(),
