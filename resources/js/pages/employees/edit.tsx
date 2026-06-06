@@ -8,7 +8,7 @@ import { index } from '@/routes/employees';
 
 interface Employee {
     id: number; name: string; employee_number: string | null; gender: string | null;
-    department: string; daily_rate: string; shift_start: string; shift_end: string;
+    department: string; daily_rate: string; shift_start: string; shift_end: string; is_active: boolean;
 }
 
 export default function EmployeeEdit({ employee }: { employee: Employee }) {
@@ -20,6 +20,7 @@ export default function EmployeeEdit({ employee }: { employee: Employee }) {
         daily_rate: employee.daily_rate,
         shift_start: employee.shift_start.slice(0, 5),
         shift_end: employee.shift_end.slice(0, 5),
+        is_active: employee.is_active,
     });
 
     function submit(e: React.FormEvent) {
@@ -80,6 +81,19 @@ export default function EmployeeEdit({ employee }: { employee: Employee }) {
                             <Input type="time" value={data.shift_end} onChange={e => setData('shift_end', e.target.value)} />
                             <InputError message={errors.shift_end} />
                         </div>
+                    </div>
+                    <div>
+                        <Label>Status</Label>
+                        <Select value={data.is_active ? 'active' : 'inactive'} onValueChange={v => setData('is_active', v === 'active')}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.is_active} />
                     </div>
                     <Button type="submit" disabled={processing}>Update Employee</Button>
                 </form>

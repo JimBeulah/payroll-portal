@@ -34,7 +34,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
     const [page, setPage] = useState(1);
 
     const createForm = useForm({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
-    const editForm = useForm({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '', shift_end: '' });
+    const editForm = useForm({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '', shift_end: '', is_active: true });
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
@@ -66,6 +66,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
             daily_rate: emp.daily_rate,
             shift_start: emp.shift_start.slice(0, 5),
             shift_end: emp.shift_end.slice(0, 5),
+            is_active: emp.is_active,
         });
         setTarget(emp);
         setMode('edit');
@@ -295,6 +296,19 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                                 <Input type="time" value={editForm.data.shift_end} onChange={e => editForm.setData('shift_end', e.target.value)} />
                                 <InputError message={editForm.errors.shift_end} />
                             </div>
+                        </div>
+                        <div>
+                            <Label>Status</Label>
+                            <Select value={editForm.data.is_active ? 'active' : 'inactive'} onValueChange={v => editForm.setData('is_active', v === 'active')}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError message={editForm.errors.is_active} />
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
