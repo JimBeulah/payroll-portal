@@ -1,38 +1,13 @@
-FROM php:8.3-cli-alpine
+FROM serversideup/php:8.3-cli
 
-# Install system dependencies and PHP extensions
-RUN apk add --no-cache \
-        git \
-        zip \
-        unzip \
-        libpng-dev \
-        libjpeg-turbo-dev \
-        freetype-dev \
-        libzip-dev \
-        postgresql-dev \
-        oniguruma-dev \
-        nodejs \
-        npm \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-        gd \
-        pdo \
-        pdo_pgsql \
-        bcmath \
-        zip \
-        opcache \
-        mbstring \
-        dom \
-        fileinfo \
-        tokenizer \
-        ctype \
-        pcntl \
-        exif
+USER root
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Install Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /var/www/html
 
 # Copy dependency files first for layer caching
 COPY composer.json composer.lock ./
@@ -44,18 +19,16 @@ RUN npm ci
 # Copy the rest of the application
 COPY . .
 
-# Create .env from example so artisan commands work during build
+# Create .env and build frontend assets
 RUN cp .env.example .env \
     && php artisan key:generate \
     && composer run-script post-autoload-dump \
     && npm run build
 
-# Set storage/cache permissions
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 8000
 
-# At runtime: run migrations then start the server.
-# Railway injects Postgres env vars (DB_HOST, DB_PORT, etc.) automatically.
+# Railway injects DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD automatically.
 CMD sh -c "php artisan migrate --force && php artisan config:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"
