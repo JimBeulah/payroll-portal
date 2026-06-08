@@ -48,23 +48,23 @@
     /* --- A4 page simulation on screen --- */
     .a4-page {
         width: 210mm;
-        min-height: 297mm;
+        height: auto;
         background: #fff;
         margin: 0 auto 16px auto;
         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
+        grid-template-rows: auto;
         gap: 0;
     }
 
     /* --- Each payslip cell --- */
     .payslip-cell {
-        height: 148.5mm;
         padding: 6mm;
         border: 1px dashed #ccc;
-        overflow: hidden;
+        overflow: visible;
         page-break-inside: avoid;
+        break-inside: avoid;
     }
 
     /* --- Print styles --- */
@@ -79,7 +79,7 @@
 
         .a4-page {
             width: 210mm;
-            height: 297mm;
+            height: auto;
             margin: 0;
             box-shadow: none;
             page-break-after: always;
@@ -104,7 +104,7 @@
 </div>
 
 <div class="page-wrapper">
-    @foreach ($entries->chunk(4) as $pageEntries)
+    @foreach ($entries->chunk(6) as $pageEntries)
         <div class="a4-page">
             @foreach ($pageEntries as $entry)
                 <div class="payslip-cell">
@@ -117,10 +117,10 @@
                     ])
                 </div>
             @endforeach
-            {{-- Fill empty cells so grid stays 2×2 --}}
-            @for ($i = $pageEntries->count(); $i < 4; $i++)
+            {{-- Fill empty cells so last row stays balanced --}}
+            @if ($pageEntries->count() % 2 !== 0)
                 <div class="payslip-cell"></div>
-            @endfor
+            @endif
         </div>
     @endforeach
 </div>
