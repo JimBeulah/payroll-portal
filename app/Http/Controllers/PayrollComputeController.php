@@ -99,6 +99,7 @@ class PayrollComputeController extends Controller
                 'shift_start' => $entry->shift_start,
                 'shift_end'   => $entry->shift_end,
                 '_date'       => $entry->date->format('Y-m-d'),
+                'is_additive' => !$entry->is_override,
             ];
         }
 

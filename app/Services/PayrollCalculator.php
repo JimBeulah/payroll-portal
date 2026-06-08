@@ -28,6 +28,17 @@ class PayrollCalculator
             // Manual entries carry a _date key because their dateKey includes an ID suffix
             $date = $times['_date'] ?? $dateKey;
 
+            // Additive (callback) entries are pure OT — no daily rate, every minute worked is overtime
+            if ($times['is_additive'] ?? false) {
+                $actualStart = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['sw']}");
+                $actualEnd   = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['ew']}");
+                if ($actualEnd->lte($actualStart)) {
+                    $actualEnd->addDay();
+                }
+                $overtimeMinutes += (int) $actualStart->diffInMinutes($actualEnd);
+                continue;
+            }
+
             $daysPresent++;
             $totalBasicPay += $employee->daily_rate;
 
