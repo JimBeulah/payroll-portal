@@ -26,7 +26,7 @@ class PayrollExportService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Payroll Summary');
 
-        $lastCol    = 'R';
+        $lastCol    = 'O';
         $headerRow  = 5;
         $dataStart  = 6;
 
@@ -133,14 +133,11 @@ class PayrollExportService
             $sheet->setCellValue("K{$row}", $entry->cash_advance);
             $sheet->setCellValue("L{$row}", $entry->other_deductions);
             $sheet->setCellValue("M{$row}", $entry->total_deductions);
-            $sheet->setCellValue("N{$row}", $entry->first_release);
-            $sheet->setCellValue("O{$row}", $entry->second_release);
-            $sheet->setCellValue("P{$row}", $entry->balance);
-            $sheet->setCellValue("Q{$row}", $entry->net_pay);
-            // Column R left blank for signature
+            $sheet->setCellValue("N{$row}", $entry->net_pay);
+            // Column O left blank for signature
 
             // Base row style
-            $sheet->getStyle("A{$row}:R{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:O{$row}")->applyFromArray([
                 'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bg]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
                 'borders'   => [
@@ -149,7 +146,7 @@ class PayrollExportService
             ]);
 
             // Currency format
-            foreach (['D', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'] as $c) {
+            foreach (['D', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'] as $c) {
                 $sheet->getStyle("{$c}{$row}")->getNumberFormat()->setFormatCode(self::MONEY_FMT);
             }
 
@@ -160,7 +157,7 @@ class PayrollExportService
             $sheet->getStyle("E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             // Signature cell – bottom border as signing line
-            $sheet->getStyle("R{$row}")->applyFromArray([
+            $sheet->getStyle("O{$row}")->applyFromArray([
                 'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bg]],
                 'borders' => [
                     'bottom' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '8496B0']],
@@ -184,7 +181,7 @@ class PayrollExportService
         $sheet->mergeCells("A{$totalRow}:C{$totalRow}");
         $sheet->setCellValue("A{$totalRow}", 'TOTAL');
 
-        foreach (['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'] as $c) {
+        foreach (['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'] as $c) {
             $sheet->setCellValue("{$c}{$totalRow}", "=SUM({$c}{$dataStart}:{$c}{$lastDataRow})");
             $sheet->getStyle("{$c}{$totalRow}")->getNumberFormat()->setFormatCode(self::MONEY_FMT);
         }
@@ -212,13 +209,14 @@ class PayrollExportService
         $lineRow  = $startRow + 3;
 
         // Three signatory boxes: Prepared / Checked / Approved
+        // [$outerFrom, $outerTo, $lineFrom, $lineTo, $label]
         $boxes = [
-            ['A', 'F', 'Prepared by:'],
-            ['G', 'L', 'Checked by:'],
-            ['M', 'R', 'Approved by:'],
+            ['A', 'E', 'B', 'D', 'Prepared by:'],
+            ['F', 'J', 'G', 'I', 'Checked by:'],
+            ['K', 'O', 'L', 'N', 'Approved by:'],
         ];
 
-        foreach ($boxes as [$from, $to, $label]) {
+        foreach ($boxes as [$from, $to, $lineFrom, $lineTo, $label]) {
             $sheet->mergeCells("{$from}{$labelRow}:{$to}{$labelRow}");
             $sheet->setCellValue("{$from}{$labelRow}", $label);
             $sheet->getStyle("{$from}{$labelRow}")->applyFromArray([
@@ -227,7 +225,7 @@ class PayrollExportService
             ]);
 
             $sheet->mergeCells("{$from}{$lineRow}:{$to}{$lineRow}");
-            $sheet->getStyle("{$from}{$lineRow}")->applyFromArray([
+            $sheet->getStyle("{$lineFrom}{$lineRow}:{$lineTo}{$lineRow}")->applyFromArray([
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                 'borders'   => [
                     'bottom' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => self::NAVY]],
@@ -287,11 +285,8 @@ class PayrollExportService
             'K' => ['Cash Advance',              12],
             'L' => ['Other Deductions',          13],
             'M' => ['Total Deduction',           13],
-            'N' => ['1st Release',               12],
-            'O' => ['2nd Release',               12],
-            'P' => ['BALANCE',                   12],
-            'Q' => ['NET PAY',                   12],
-            'R' => ['SIGNATURE',                 22],
+            'N' => ['NET PAY',                   12],
+            'O' => ['SIGNATURE',                 22],
         ];
     }
 }
