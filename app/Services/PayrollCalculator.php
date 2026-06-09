@@ -59,12 +59,31 @@ class PayrollCalculator
                 $actualEnd->addDay();
             }
 
+            // Derive the unpaid break window from the gap between shift duration and 8 working hours.
+            // For a standard 08:00-17:00 shift: break = 12:00-13:00.
+            $shiftTotalMinutes = (int) $shiftStart->diffInMinutes($shiftEnd);
+            $breakMinutes      = max(0, $shiftTotalMinutes - 8 * 60);
+            $breakStart        = $shiftStart->copy()->addMinutes(4 * 60); // 4h into shift
+            $breakEnd          = $breakStart->copy()->addMinutes($breakMinutes);
+
             if ($actualStart->gt($shiftStart)) {
-                $lateMinutes += abs($actualStart->diffInMinutes($shiftStart));
+                $rawLate = (int) $shiftStart->diffInMinutes($actualStart);
+                // Subtract the portion of the late window that falls inside the unpaid break
+                if ($breakMinutes > 0 && $actualStart->gt($breakStart)) {
+                    $overlapEnd = $actualStart->lte($breakEnd) ? $actualStart : $breakEnd;
+                    $rawLate   -= (int) $breakStart->diffInMinutes($overlapEnd);
+                }
+                $lateMinutes += max(0, $rawLate);
             }
 
             if ($actualEnd->lt($shiftEnd)) {
-                $undertimeMinutes += abs($shiftEnd->diffInMinutes($actualEnd));
+                $rawUndertime = (int) $actualEnd->diffInMinutes($shiftEnd);
+                // Subtract the portion of the undertime window that falls inside the unpaid break
+                if ($breakMinutes > 0 && $actualEnd->lt($breakEnd)) {
+                    $overlapStart  = $actualEnd->gte($breakStart) ? $actualEnd : $breakStart;
+                    $rawUndertime -= (int) $overlapStart->diffInMinutes($breakEnd);
+                }
+                $undertimeMinutes += max(0, $rawUndertime);
             }
 
             if ($actualEnd->gt($shiftEnd)) {
