@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePayrollRunRequest;
+use App\Http\Requests\UpdatePayrollRunRequest;
 use App\Models\Employee;
 use App\Models\PayrollRun;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +44,15 @@ class PayrollRunController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name', 'department', 'shift_start', 'shift_end']),
         ]);
+    }
+
+    public function update(UpdatePayrollRunRequest $request, PayrollRun $payrollRun)
+    {
+        abort_if($payrollRun->isLocked(), 403, 'Locked payroll runs cannot be edited.');
+
+        $payrollRun->update($request->validated());
+
+        return back()->with('success', 'Payroll run updated.');
     }
 
     public function destroy(PayrollRun $payrollRun)

@@ -4,7 +4,7 @@ import { index } from '@/routes/payroll-runs';
 import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Calculator, PlusCircle, Pencil } from 'lucide-react';
+import { Upload, Calculator, PlusCircle, Pencil, ArrowUpDown, Search } from 'lucide-react';
 import PayrollSummaryTable, { PayrollEntry } from '@/components/payroll/payroll-summary-table';
 import DeductionSheet from '@/components/payroll/deduction-sheet';
 import ManualAttendanceModal from '@/components/payroll/manual-attendance-modal';
@@ -52,6 +52,8 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
     const [uploading, setUploading] = useState(false);
     const [showManualModal, setShowManualModal] = useState(false);
     const [editingEntry, setEditingEntry] = useState<ManualAttendance | null>(null);
+    const [manualSearch, setManualSearch] = useState('');
+    const [manualDateSort, setManualDateSort] = useState<'asc' | 'desc'>('asc');
     const fileRef = useRef<HTMLInputElement>(null);
 
     function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -203,7 +205,33 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                                 Add Manual Entry
                             </Button>
 
-                            {manualAttendances.length > 0 && (
+                            {manualAttendances.length > 0 && (() => {
+                                const q = manualSearch.trim().toLowerCase();
+                                const filtered = manualAttendances
+                                    .filter(m => !q || m.employee.name.toLowerCase().includes(q) || m.employee.department.toLowerCase().includes(q) || m.date.includes(q) || (m.note ?? '').toLowerCase().includes(q))
+                                    .sort((a, b) => manualDateSort === 'asc' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
+                                return (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative flex-1 max-w-xs">
+                                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                                            <input
+                                                type="text"
+                                                value={manualSearch}
+                                                onChange={e => setManualSearch(e.target.value)}
+                                                placeholder="Search employee, date, note…"
+                                                className="w-full pl-8 pr-3 py-1.5 text-xs rounded border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setManualDateSort(s => s === 'asc' ? 'desc' : 'asc')}
+                                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border rounded px-2.5 py-1.5 bg-background"
+                                        >
+                                            <ArrowUpDown className="w-3.5 h-3.5" />
+                                            Date {manualDateSort === 'asc' ? '↑ Asc' : '↓ Desc'}
+                                        </button>
+                                    </div>
                                 <div className="rounded border text-sm overflow-x-auto">
                                     <table className="w-full text-left">
                                         <thead className="bg-muted text-xs text-muted-foreground">
@@ -219,7 +247,7 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y">
-                                            {manualAttendances.map(m => (
+                                            {filtered.map(m => (
                                                 <tr key={m.id}>
                                                     <td className="px-3 py-2 font-medium">{m.employee.name}<span className="ml-1 text-xs text-muted-foreground">({m.employee.department})</span></td>
                                                     <td className="px-3 py-2">{m.date}</td>
@@ -263,7 +291,9 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                                         </tbody>
                                     </table>
                                 </div>
-                            )}
+                                </div>
+                                );
+                            })()}
                         </div>
 
                         {/* Step 3 — Compute */}

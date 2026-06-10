@@ -23,6 +23,7 @@ const PAGE_SIZE = 10;
 
 export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
     const [createOpen, setCreateOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<PayrollRun | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<PayrollRun | null>(null);
 
     const [search, setSearch] = useState('');
@@ -30,6 +31,7 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
     const [page, setPage] = useState(1);
 
     const createForm = useForm({ period_start: '', period_end: '', payable_date: '' });
+    const editForm = useForm({ period_start: '', period_end: '', payable_date: '' });
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
@@ -56,6 +58,17 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
     function submitCreate(e: React.FormEvent) {
         e.preventDefault();
         createForm.post('/payroll-runs', { onSuccess: () => setCreateOpen(false) });
+    }
+
+    function openEdit(run: PayrollRun) {
+        editForm.setData({ period_start: run.period_start, period_end: run.period_end, payable_date: run.payable_date });
+        editForm.clearErrors();
+        setEditTarget(run);
+    }
+
+    function submitEdit(e: React.FormEvent) {
+        e.preventDefault();
+        editForm.put(`/payroll-runs/${editTarget?.id}`, { onSuccess: () => setEditTarget(null) });
     }
 
     function confirmDelete() {
@@ -122,9 +135,14 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
                                             <Link href={`/payroll-runs/${run.id}`}>View</Link>
                                         </Button>
                                         {run.status === 'draft' && (
-                                            <Button variant="destructive" size="sm" onClick={() => setDeleteTarget(run)}>
-                                                Delete
-                                            </Button>
+                                            <>
+                                                <Button variant="outline" size="sm" onClick={() => openEdit(run)}>
+                                                    Edit
+                                                </Button>
+                                                <Button variant="destructive" size="sm" onClick={() => setDeleteTarget(run)}>
+                                                    Delete
+                                                </Button>
+                                            </>
                                         )}
                                     </TableCell>
                                 </TableRow>
@@ -176,6 +194,36 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
                             <Button type="submit" disabled={createForm.processing}>Create Run</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null); }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Payroll Run</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={submitEdit} className="space-y-4">
+                        <div>
+                            <Label>Period Start</Label>
+                            <Input type="date" value={editForm.data.period_start} onChange={e => editForm.setData('period_start', e.target.value)} />
+                            <InputError message={editForm.errors.period_start} />
+                        </div>
+                        <div>
+                            <Label>Period End</Label>
+                            <Input type="date" value={editForm.data.period_end} onChange={e => editForm.setData('period_end', e.target.value)} />
+                            <InputError message={editForm.errors.period_end} />
+                        </div>
+                        <div>
+                            <Label>Payable Date</Label>
+                            <Input type="date" value={editForm.data.payable_date} onChange={e => editForm.setData('payable_date', e.target.value)} />
+                            <InputError message={editForm.errors.payable_date} />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setEditTarget(null)}>Cancel</Button>
+                            <Button type="submit" disabled={editForm.processing}>Save Changes</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
