@@ -11,29 +11,9 @@ use App\Http\Controllers\PayrollExportController;
 use App\Http\Controllers\PayrollLockController;
 use App\Http\Controllers\PayrollRunController;
 use App\Http\Controllers\PayslipController;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
-
-// TEMPORARY EXPORT — remove after use
-Route::get('/__export/{token}', function (string $token) {
-    abort_if($token !== 'beulah-export-2026', 403);
-
-    $data = [
-        'employees'                 => DB::table('employees')->get(),
-        'users'                     => DB::table('users')->get(),
-        'holidays'                  => DB::table('holidays')->get(),
-        'app_settings'              => DB::table('app_settings')->get(),
-        'payroll_runs'              => DB::table('payroll_runs')->get(),
-        'payroll_entries'           => DB::table('payroll_entries')->get(),
-        'payroll_manual_attendances'=> DB::table('payroll_manual_attendances')->get(),
-        'attendance_uploads'        => DB::table('attendance_uploads')->get(),
-    ];
-
-    return response()->json($data)
-        ->header('Content-Disposition', 'attachment; filename="payroll-export-' . now()->format('Y-m-d') . '.json"');
-});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
