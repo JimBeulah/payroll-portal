@@ -106,7 +106,7 @@ class PayrollRunController extends Controller
                                 }
 
                                 if ($aEnd->gt($sEnd)) {
-                                    $otMin = (int) $aEnd->diffInMinutes($sEnd);
+                                    $otMin = abs((int) $aEnd->diffInMinutes($sEnd));
                                 }
                             } catch (\Exception) {
                                 // Skip computation on malformed time value

@@ -146,3 +146,65 @@
 [server]  2026-06-23 11:36:55 /payroll-runs/3 .. ~ 508.51ms
 [server]  2026-06-23 11:36:56 /payroll-logo.png?v=2 .. ~ 0.56ms
 [server]  2026-06-23 11:36:56 /payroll-logo.png?v=2 .. ~ 0.15ms
+[vite] [2m1:12:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@id/D:/JIM_BEULAH/Code/payroll-portal/resources/js/pages/payroll/create.tsx, /@id/D:/JIM_BEULAH/Code/payroll-portal/resources/js/pages/payroll/index.tsx, /@id/D:/JIM_BEULAH/Code/payroll-portal/resources/js/pages/payroll/show.tsx[22m
+[vite] [2m1:12:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m info: Types generated for actions, routes, form variants
+[vite]   Plugin: [35m@laravel/vite-plugin-wayfinder[39m
+[server]  2026-06-23 13:12:54 /payroll-runs/3 .. ~ 2s
+[server]  2026-06-23 13:12:57 /payroll-logo.png?v=2 .. ~ 0.10ms
+[server]  2026-06-23 13:12:58 /payroll-logo.png?v=2 .. ~ 0.09ms
+[vite] [2m1:13:17 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@id/D:/JIM_BEULAH/Code/payroll-portal/resources/js/pages/payroll/create.tsx, /@id/D:/JIM_BEULAH/Code/payroll-portal/resources/js/pages/payroll/index.tsx, /@id/D:/JIM_BEULAH/Code/payroll-portal/resources/js/pages/payroll/show.tsx[22m
+[vite] [2m1:13:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m info: Types generated for actions, routes, form variants
+[vite]   Plugin: [35m@laravel/vite-plugin-wayfinder[39m
+[server]  2026-06-23 13:13:18 /payroll-runs/3 .. ~ 1s
+[server]  2026-06-23 13:13:19 /payroll-logo.png?v=2 .. ~ 0.04ms
+[server]  2026-06-23 13:13:20 /payroll-logo.png?v=2 .. ~ 0.11ms
+[vite] [2m1:13:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@id/D:/JIM_BEULAH/Code/payroll-portal/resources/js/pages/payroll/show.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:13:28 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@id/D:/JIM_BEULAH/Code/payroll-portal/resources/js/pages/payroll/show.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:13:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@id/D:/JIM_BEULAH/Code/payroll-portal/resources/js/pages/payroll/show.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:13:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:13:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:14:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:14:43 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:15:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[server]  2026-06-23 13:17:42 /employees .. ~ 501.70ms
+[server]  2026-06-23 13:17:47 /employees/11 .. ~ 507.71ms
+[server]  2026-06-23 13:17:47 /employees .. ~ 501.13ms
+[server]  2026-06-23 13:17:52 /employees/5 .. ~ 507.70ms
+[server]  2026-06-23 13:17:53 /employees .. ~ 506.44ms
+[server]  2026-06-23 13:17:58 /employees/6 .. ~ 506.34ms
+[server]  2026-06-23 13:17:58 /employees .. ~ 508.54ms
+[server]  2026-06-23 13:18:02 /payroll-runs .. ~ 506.68ms
+[server]  2026-06-23 13:18:04 /payroll-runs/3 .. ~ 506.53ms
+[vite] [2m1:19:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:19:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:19:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[server]  2026-06-23 13:19:23 /dashboard .. ~ 503.05ms
+[vite] [2m1:20:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:20:30 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[server]  2026-06-23 13:28:34 /payroll-manual-attendances/36 .. ~ 542.36ms
+[server]  2026-06-23 13:28:35 /payroll-runs/3 .. ~ 497.94ms
+[vite] [2m1:29:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:30:38 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:30:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[vite] [2m1:31:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[server]  2026-06-23 13:32:12 /attendance-uploads/20 .. ~ 515.25ms
+[server]  2026-06-23 13:32:13 /payroll-runs/3 .. ~ 0.04ms
+[server]  2026-06-23 13:32:15 /payroll-runs/3 .. ~ 513.25ms
+[server]  2026-06-23 13:32:15 /payroll-logo.png?v=2 .. ~ 0.07ms
+[server]  2026-06-23 13:32:16 /payroll-logo.png?v=2 .. ~ 0.09ms
+[server]  2026-06-23 13:32:16 /dashboard .. ~ 0.08ms
+[server]  2026-06-23 13:32:18 /payroll-runs/3 .. ~ 563.71ms
+[server]  2026-06-23 13:32:18 /payroll-logo.png?v=2 .. ~ 0.40ms
+[server]  2026-06-23 13:32:19 /payroll-logo.png?v=2 .. ~ 0.09ms
+[server]  2026-06-23 13:32:23 /payroll-runs/3/upload .. ~ 505.15ms
+[server]  2026-06-23 13:32:23 /payroll-runs/3 .. ~ 506.01ms
+[server]  2026-06-23 13:32:26 /payroll-runs/3/compute .. ~ 506.01ms
+[server]  2026-06-23 13:32:26 /payroll-runs/3 .. ~ 506.18ms
+[server]  2026-06-23 13:34:07 /payroll-runs/3/manual-attendances .. ~ 0.51ms
+[server]  2026-06-23 13:34:08 /payroll-runs/3 .. ~ 505.67ms
+[server]  2026-06-23 13:38:43 /payroll-runs/3 .. ~ 1s
+[server]  2026-06-23 13:38:44 /payroll-logo.png?v=2 .. ~ 0.04ms
+[server]  2026-06-23 13:38:45 /payroll-logo.png?v=2 .. ~ 0.09ms
+[vite] [2m1:38:46 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m info: Types generated for actions, routes, form variants
+[vite]   Plugin: [35m@laravel/vite-plugin-wayfinder[39m
+[server]  2026-06-23 13:40:26 /payroll-runs .. ~ 1s

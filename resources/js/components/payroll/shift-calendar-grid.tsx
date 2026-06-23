@@ -42,13 +42,6 @@ interface Props {
     attendanceData: Record<number, Record<string, DayAttendance>>;
 }
 
-function fmtMinutes(minutes: number): string {
-    if (minutes < 60) return `${minutes}m`;
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return m === 0 ? `${h}hr` : `${h}hr ${m}m`;
-}
-
 function toHHMM(value: string): string {
     if (!value) return '';
     const parts = value.substring(0, 5).split(':');
@@ -62,6 +55,55 @@ function to12hr(value: string): string {
     const period = h >= 12 ? 'pm' : 'am';
     const hour = h % 12 === 0 ? 12 : h % 12;
     return `${hour}:${String(m).padStart(2, '0')}${period}`;
+}
+
+function timeToMins(hhmm: string): number {
+    const [h, m] = toHHMM(hhmm).split(':').map(Number);
+    return h * 60 + m;
+}
+
+function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: string) {
+    let sStart = timeToMins(shiftStart);
+    let sEnd   = timeToMins(shiftEnd);
+    let aStart = timeToMins(sw);
+    let aEnd   = timeToMins(ew);
+
+    if (sEnd <= sStart) sEnd += 1440;
+    if (aEnd <= aStart) aEnd += 1440;
+
+    const shiftMins = sEnd - sStart;
+    const breakMins = Math.max(0, shiftMins - 480);
+    const bStart    = sStart + 240;
+    const bEnd      = bStart + breakMins;
+
+    let late = 0, undertime = 0, overtime = 0;
+
+    if (aStart > sStart) {
+        let raw = aStart - sStart;
+        if (breakMins > 0 && aStart > bStart) {
+            raw -= Math.min(aStart, bEnd) - bStart;
+        }
+        late = Math.max(0, raw);
+    }
+
+    if (aEnd < sEnd) {
+        let raw = sEnd - aEnd;
+        if (breakMins > 0 && aEnd < bEnd) {
+            raw -= bEnd - Math.max(aEnd, bStart);
+        }
+        undertime = Math.max(0, raw);
+    }
+
+    if (aEnd > sEnd) overtime = aEnd - sEnd;
+
+    return { late_minutes: late, undertime_minutes: undertime, overtime_minutes: overtime };
+}
+
+function fmtMinutes(minutes: number): string {
+    if (minutes < 60) return `${minutes}m`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m === 0 ? `${h}hr` : `${h}hr ${m}m`;
 }
 
 export default function ShiftCalendarGrid({
@@ -275,29 +317,46 @@ export default function ShiftCalendarGrid({
                                         {excelDay.undertime_minutes > 0 && (
                                             <div className="text-orange-500 font-medium">UT: {fmtMinutes(excelDay.undertime_minutes)}</div>
                                         )}
+                                        {excelDay.overtime_minutes > 0 && (
+                                            <div className="text-green-500 font-medium">OT: {fmtMinutes(excelDay.overtime_minutes)}</div>
+                                        )}
                                     </div>
                                 )}
 
                                 {/* Manual attendance entry */}
-                                {attendance && (
-                                    <div className="text-[11px] font-medium space-y-0.5">
-                                        {attendance.is_override && (
-                                            <div className="text-[9px] text-destructive font-bold uppercase leading-none">OVR</div>
-                                        )}
-                                        <div className="flex items-center gap-1">
-                                            <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">S</span>
-                                            <span className="text-primary">{to12hr(attendance.shift_start)}–{to12hr(attendance.shift_end)}</span>
-                                        </div>
-                                        {(attendance.sw || attendance.ew) && (
+                                {attendance && (() => {
+                                    const stats = attendance.sw && attendance.ew
+                                        ? computeDayStats(attendance.sw, attendance.ew, attendance.shift_start, attendance.shift_end)
+                                        : null;
+                                    return (
+                                        <div className="text-[11px] font-medium space-y-0.5">
+                                            {attendance.is_override && (
+                                                <div className="text-[9px] text-destructive font-bold uppercase leading-none">OVR</div>
+                                            )}
                                             <div className="flex items-center gap-1">
-                                                <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">T</span>
-                                                <span className="text-muted-foreground">
-                                                    {attendance.sw ? to12hr(attendance.sw) : '?'}–{attendance.ew ? to12hr(attendance.ew) : '?'}
-                                                </span>
+                                                <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">S</span>
+                                                <span className="text-primary">{to12hr(attendance.shift_start)}–{to12hr(attendance.shift_end)}</span>
                                             </div>
-                                        )}
-                                    </div>
-                                )}
+                                            {(attendance.sw || attendance.ew) && (
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">T</span>
+                                                    <span className="text-muted-foreground">
+                                                        {attendance.sw ? to12hr(attendance.sw) : '?'}–{attendance.ew ? to12hr(attendance.ew) : '?'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {stats && stats.late_minutes > 0 && (
+                                                <div className="text-amber-500">Late: {fmtMinutes(stats.late_minutes)}</div>
+                                            )}
+                                            {stats && stats.undertime_minutes > 0 && (
+                                                <div className="text-orange-500">UT: {fmtMinutes(stats.undertime_minutes)}</div>
+                                            )}
+                                            {stats && stats.overtime_minutes > 0 && (
+                                                <div className="text-green-500">OT: {fmtMinutes(stats.overtime_minutes)}</div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         );
                     })}
