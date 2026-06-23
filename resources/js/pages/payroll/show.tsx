@@ -34,15 +34,24 @@ interface ManualAttendance {
     is_override: boolean;
 }
 
+interface DayAttendance {
+    sw: string;
+    ew: string;
+    late_minutes: number;
+    undertime_minutes: number;
+    overtime_minutes: number;
+}
+
 interface Props {
     run: PayrollRun;
     entries: PayrollEntry[];
     uploads: AttendanceUpload[];
     employees: Employee[];
     manualAttendances: ManualAttendance[];
+    attendanceData: Record<number, Record<string, DayAttendance>>;
 }
 
-export default function PayrollShow({ run, entries, uploads, employees, manualAttendances }: Props) {
+export default function PayrollShow({ run, entries, uploads, employees, manualAttendances, attendanceData }: Props) {
     const { props } = usePage<{
         errors: Record<string, string>;
     }>();
@@ -196,6 +205,7 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                                 periodStart={run.period_start}
                                 periodEnd={run.period_end}
                                 manualAttendances={manualAttendances}
+                                attendanceData={attendanceData}
                             />
                         </div>
 

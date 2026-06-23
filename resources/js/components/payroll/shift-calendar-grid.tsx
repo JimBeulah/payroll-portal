@@ -25,20 +25,40 @@ interface ManualAttendance {
     is_override: boolean;
 }
 
+interface DayAttendance {
+    sw: string;
+    ew: string;
+    late_minutes: number;
+    undertime_minutes: number;
+    overtime_minutes: number;
+}
+
 interface Props {
     payrollRunId: number;
     employees: Employee[];
     periodStart: string;
     periodEnd: string;
     manualAttendances: ManualAttendance[];
+    attendanceData: Record<number, Record<string, DayAttendance>>;
+}
+
+function fmtMinutes(minutes: number): string {
+    if (minutes < 60) return `${minutes}m`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m === 0 ? `${h}hr` : `${h}hr ${m}m`;
 }
 
 function toHHMM(value: string): string {
-    return value.substring(0, 5);
+    if (!value) return '';
+    const parts = value.substring(0, 5).split(':');
+    return parts[0].padStart(2, '0') + ':' + (parts[1] ?? '00').padStart(2, '0');
 }
 
-function to12hr(hhmm: string): string {
-    const [h, m] = hhmm.substring(0, 5).split(':').map(Number);
+function to12hr(value: string): string {
+    if (!value) return '';
+    const hhmm = toHHMM(value);
+    const [h, m] = hhmm.split(':').map(Number);
     const period = h >= 12 ? 'pm' : 'am';
     const hour = h % 12 === 0 ? 12 : h % 12;
     return `${hour}:${String(m).padStart(2, '0')}${period}`;
@@ -50,6 +70,7 @@ export default function ShiftCalendarGrid({
     periodStart,
     periodEnd,
     manualAttendances,
+    attendanceData,
 }: Props) {
     const [selectedEmployee, setSelectedEmployee] = useState<string>(employees[0]?.id.toString() ?? '');
     const [pickerDate, setPickerDate] = useState<string | null>(null);
@@ -98,6 +119,7 @@ export default function ShiftCalendarGrid({
         if (dateStr < periodStart || dateStr > periodEnd) return;
         setPickerDate(dateStr);
         const existing = attendanceByDate[dateStr];
+        const excelDay = (attendanceData[Number(selectedEmployee)] ?? {})[dateStr] ?? null;
         if (existing) {
             setCustomShiftStart(toHHMM(existing.shift_start));
             setCustomShiftEnd(toHHMM(existing.shift_end));
@@ -105,6 +127,13 @@ export default function ShiftCalendarGrid({
             setEw(existing.ew ? toHHMM(existing.ew) : '');
             setNote(existing.note ?? '');
             setIsOverride(existing.is_override);
+        } else if (excelDay) {
+            setCustomShiftStart(toHHMM(employee.shift_start));
+            setCustomShiftEnd(toHHMM(employee.shift_end));
+            setSw(toHHMM(excelDay.sw));
+            setEw(toHHMM(excelDay.ew));
+            setNote('');
+            setIsOverride(true);
         } else {
             setCustomShiftStart(toHHMM(employee.shift_start));
             setCustomShiftEnd(toHHMM(employee.shift_end));
@@ -206,37 +235,62 @@ export default function ShiftCalendarGrid({
                     {dateArray.map((date, idx) => {
                         const dateStr = date ? formatDateString(date) : null;
                         const attendance = dateStr ? attendanceByDate[dateStr] : null;
+                        const excelDay = dateStr ? ((attendanceData[Number(selectedEmployee)] ?? {})[dateStr] ?? null) : null;
                         const inPeriod = date ? isInPeriod(date) : false;
                         const today = date ? isToday(date) : false;
+                        const hasOverride = attendance?.is_override ?? false;
 
                         return (
                             <div
                                 key={idx}
                                 onClick={() => handleDateClick(date)}
                                 className={`
-                                    aspect-square p-2 rounded border text-xs relative cursor-pointer
+                                    min-h-20 p-2 rounded border text-xs relative cursor-pointer
                                     transition-colors
                                     ${!date || !inPeriod
                                         ? 'bg-muted/30 border-transparent cursor-default opacity-40'
                                         : attendance
                                             ? 'bg-primary/10 border-primary/40 hover:bg-primary/20'
-                                            : 'bg-background border-border hover:bg-muted'
+                                            : excelDay
+                                                ? 'bg-muted/30 border-border hover:bg-muted/50'
+                                                : 'bg-background border-border hover:bg-muted'
                                     }
                                     ${today ? 'ring-1 ring-amber-500' : ''}
                                 `}
                             >
-                                <div className="font-medium mb-1">
+                                <div className="text-sm font-semibold mb-1 leading-none">
                                     {date && date.getDate()}
                                 </div>
+
+                                {/* Excel attendance (from uploaded file) */}
+                                {excelDay && !hasOverride && (
+                                    <div className="text-[11px] space-y-0.5">
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-[9px] uppercase text-muted-foreground font-semibold shrink-0">T</span>
+                                            <span className="text-foreground/90 font-medium">{to12hr(excelDay.sw)}–{to12hr(excelDay.ew)}</span>
+                                        </div>
+                                        {excelDay.late_minutes > 0 && (
+                                            <div className="text-amber-500 font-medium">Late: {fmtMinutes(excelDay.late_minutes)}</div>
+                                        )}
+                                        {excelDay.undertime_minutes > 0 && (
+                                            <div className="text-orange-500 font-medium">UT: {fmtMinutes(excelDay.undertime_minutes)}</div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Manual attendance entry */}
                                 {attendance && (
-                                    <div className="text-[10px] font-medium truncate space-y-0.5">
-                                        <div className="flex items-center gap-0.5">
-                                            <span className="text-[8px] uppercase tracking-wide text-muted-foreground font-semibold">S</span>
+                                    <div className="text-[11px] font-medium space-y-0.5">
+                                        {attendance.is_override && (
+                                            <div className="text-[9px] text-destructive font-bold uppercase leading-none">OVR</div>
+                                        )}
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">S</span>
                                             <span className="text-primary">{to12hr(attendance.shift_start)}–{to12hr(attendance.shift_end)}</span>
                                         </div>
                                         {(attendance.sw || attendance.ew) && (
-                                            <div className="flex items-center gap-0.5">
-                                                <span className="text-[8px] uppercase tracking-wide text-muted-foreground font-semibold">T</span>
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">T</span>
                                                 <span className="text-muted-foreground">
                                                     {attendance.sw ? to12hr(attendance.sw) : '?'}–{attendance.ew ? to12hr(attendance.ew) : '?'}
                                                 </span>
