@@ -4,10 +4,10 @@ import { index } from '@/routes/payroll-runs';
 import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Calculator, PlusCircle, Pencil, ArrowUpDown, Search } from 'lucide-react';
+import { Upload, Calculator } from 'lucide-react';
 import PayrollSummaryTable, { PayrollEntry } from '@/components/payroll/payroll-summary-table';
 import DeductionSheet from '@/components/payroll/deduction-sheet';
-import ManualAttendanceModal from '@/components/payroll/manual-attendance-modal';
+import ShiftCalendarGrid from '@/components/payroll/shift-calendar-grid';
 
 interface PayrollRun {
     id: number; period_start: string; period_end: string;
@@ -25,7 +25,6 @@ interface Employee {
 interface ManualAttendance {
     id: number;
     employee_id: number;
-    employee: { name: string; department: string };
     date: string;
     sw: string | null;
     ew: string | null;
@@ -50,10 +49,6 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
 
     const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
     const [uploading, setUploading] = useState(false);
-    const [showManualModal, setShowManualModal] = useState(false);
-    const [editingEntry, setEditingEntry] = useState<ManualAttendance | null>(null);
-    const [manualSearch, setManualSearch] = useState('');
-    const [manualDateSort, setManualDateSort] = useState<'asc' | 'desc'>('asc');
     const fileRef = useRef<HTMLInputElement>(null);
 
     function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -195,105 +190,13 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                             <p className="text-xs text-muted-foreground">
                                 Add entries for employees with reassigned or additional shifts not captured in the attendance file (e.g. second shifts, night shifts assigned by admin).
                             </p>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => { setEditingEntry(null); setShowManualModal(true); }}
-                            >
-                                <PlusCircle className="w-4 h-4 mr-2" />
-                                Add Manual Entry
-                            </Button>
-
-                            {manualAttendances.length > 0 && (() => {
-                                const q = manualSearch.trim().toLowerCase();
-                                const filtered = manualAttendances
-                                    .filter(m => !q || m.employee.name.toLowerCase().includes(q) || m.employee.department.toLowerCase().includes(q) || m.date.includes(q) || (m.note ?? '').toLowerCase().includes(q))
-                                    .sort((a, b) => manualDateSort === 'asc' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
-                                return (
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="relative flex-1 max-w-xs">
-                                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                                            <input
-                                                type="text"
-                                                value={manualSearch}
-                                                onChange={e => setManualSearch(e.target.value)}
-                                                placeholder="Search employee, date, note…"
-                                                className="w-full pl-8 pr-3 py-1.5 text-xs rounded border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setManualDateSort(s => s === 'asc' ? 'desc' : 'asc')}
-                                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border rounded px-2.5 py-1.5 bg-background"
-                                        >
-                                            <ArrowUpDown className="w-3.5 h-3.5" />
-                                            Date {manualDateSort === 'asc' ? '↑ Asc' : '↓ Desc'}
-                                        </button>
-                                    </div>
-                                <div className="rounded border text-sm overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-muted text-xs text-muted-foreground">
-                                            <tr>
-                                                <th className="px-3 py-2">Employee</th>
-                                                <th className="px-3 py-2">Date</th>
-                                                <th className="px-3 py-2">Shift</th>
-                                                <th className="px-3 py-2">SW</th>
-                                                <th className="px-3 py-2">EW</th>
-                                                <th className="px-3 py-2">Note</th>
-                                                <th className="px-3 py-2">Type</th>
-                                                <th className="px-3 py-2" colSpan={2}></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y">
-                                            {filtered.map(m => (
-                                                <tr key={m.id}>
-                                                    <td className="px-3 py-2 font-medium">{m.employee.name}<span className="ml-1 text-xs text-muted-foreground">({m.employee.department})</span></td>
-                                                    <td className="px-3 py-2">{m.date}</td>
-                                                    <td className="px-3 py-2">{m.shift_start}–{m.shift_end}</td>
-                                                    <td className="px-3 py-2">{m.sw ?? '—'}</td>
-                                                    <td className="px-3 py-2">{m.ew ?? '—'}</td>
-                                                    <td className="px-3 py-2 text-muted-foreground">{m.note ?? ''}</td>
-                                                    <td className="px-3 py-2">
-                                                        {m.is_override
-                                                            ? <span className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">override</span>
-                                                            : <span className="text-xs text-muted-foreground">additive</span>
-                                                        }
-                                                    </td>
-                                                    <td className="px-3 py-2">
-                                                        <button
-                                                            type="button"
-                                                            className="text-xs text-blue-500 hover:underline flex items-center gap-1"
-                                                            onClick={() => {
-                                                                setEditingEntry(m);
-                                                                setShowManualModal(true);
-                                                            }}
-                                                        >
-                                                            <Pencil className="w-3 h-3" /> Edit
-                                                        </button>
-                                                    </td>
-                                                    <td className="px-3 py-2">
-                                                        <button
-                                                            type="button"
-                                                            className="text-xs text-red-500 hover:underline"
-                                                            onClick={() => {
-                                                                if (confirm('Remove this manual entry?')) {
-                                                                    router.delete(`/payroll-manual-attendances/${m.id}`);
-                                                                }
-                                                            }}
-                                                        >
-                                                            Remove
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                </div>
-                                );
-                            })()}
+                            <ShiftCalendarGrid
+                                payrollRunId={run.id}
+                                employees={employees}
+                                periodStart={run.period_start}
+                                periodEnd={run.period_end}
+                                manualAttendances={manualAttendances}
+                            />
                         </div>
 
                         {/* Step 3 — Compute */}
@@ -336,16 +239,6 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                 entry={selectedEntry}
                 open={selectedEntry !== null}
                 onClose={() => setSelectedEntry(null)}
-            />
-
-            <ManualAttendanceModal
-                open={showManualModal}
-                onClose={() => { setShowManualModal(false); setEditingEntry(null); }}
-                payrollRunId={run.id}
-                employees={employees}
-                periodStart={run.period_start}
-                periodEnd={run.period_end}
-                editing={editingEntry}
             />
 
         </>
