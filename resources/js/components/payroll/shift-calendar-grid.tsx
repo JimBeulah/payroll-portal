@@ -94,7 +94,18 @@ function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: s
         undertime = Math.max(0, raw);
     }
 
-    if (aEnd > sEnd) overtime = aEnd - sEnd;
+    if (aEnd > sEnd) {
+        let rawOt = aEnd - sEnd;
+        // Deduct unpaid lunch (12pm–1pm) if OT window overlaps it (same day or next day)
+        const lunchStart = 12 * 60;
+        const lunchEnd   = 13 * 60;
+        for (const offset of [0, 1440]) {
+            const ls = lunchStart + offset;
+            const le = lunchEnd   + offset;
+            rawOt -= Math.max(0, Math.min(aEnd, le) - Math.max(sEnd, ls));
+        }
+        overtime = Math.max(0, rawOt);
+    }
 
     return { late_minutes: late, undertime_minutes: undertime, overtime_minutes: overtime };
 }
