@@ -1,6 +1,8 @@
 <?php
+
 namespace App\Http\Controllers;
 
+use App\Models\CashAdvanceRequest;
 use App\Models\Employee;
 use App\Models\Holiday;
 use App\Models\PayrollEntry;
@@ -19,7 +21,7 @@ class PayrollComputeController extends Controller
         abort_if($payrollRun->isLocked(), 403);
 
         $periodStart = $payrollRun->period_start->format('Y-m-d');
-        $periodEnd   = $payrollRun->period_end->format('Y-m-d');
+        $periodEnd = $payrollRun->period_end->format('Y-m-d');
 
         $holidays = Holiday::whereBetween('date', [$periodStart, $periodEnd])->get();
 
@@ -34,7 +36,7 @@ class PayrollComputeController extends Controller
             $fullPath = Storage::path($upload->storage_path);
 
             if (file_exists($fullPath)) {
-                $parsed   = (new AttendanceParser())->parse($fullPath);
+                $parsed = (new AttendanceParser)->parse($fullPath);
                 $unmatched = [];
 
                 foreach ($parsed as $row) {
@@ -42,20 +44,21 @@ class PayrollComputeController extends Controller
                         ->whereRaw('LOWER(TRIM(department)) = ?', [strtolower(trim($row['department']))])
                         ->first();
 
-                    if (!$employee) {
+                    if (! $employee) {
                         $unmatched[] = "{$row['name']} ({$row['department']})";
+
                         continue;
                     }
 
                     $periodDays = array_filter(
                         $row['attendance'],
-                        fn($date) => $date >= $periodStart && $date <= $periodEnd,
+                        fn ($date) => $date >= $periodStart && $date <= $periodEnd,
                         ARRAY_FILTER_USE_KEY
                     );
 
                     $attendanceByEmployee[$employee->id] = [
                         'employee' => $employee,
-                        'days'     => $periodDays,
+                        'days' => $periodDays,
                     ];
                 }
             }
@@ -75,7 +78,7 @@ class PayrollComputeController extends Controller
         // Additive entries (is_override=false, the default) stack on top — used for second shifts.
         foreach ($manualEntries->where('is_override', true) as $entry) {
             $empId = $entry->employee_id;
-            $date  = $entry->date->format('Y-m-d');
+            $date = $entry->date->format('Y-m-d');
             unset($attendanceByEmployee[$empId]['days'][$date]);
         }
 
@@ -83,55 +86,74 @@ class PayrollComputeController extends Controller
         foreach ($manualEntries as $entry) {
             $id = $entry->employee_id;
 
-            if (!isset($attendanceByEmployee[$id])) {
+            if (! isset($attendanceByEmployee[$id])) {
                 $attendanceByEmployee[$id] = [
                     'employee' => $entry->employee,
-                    'days'     => [],
+                    'days' => [],
                 ];
             }
 
             // Unique key per entry so two manual entries on the same date (double shift) both count
-            $dayKey = $entry->date->format('Y-m-d') . '_m' . $entry->id;
+            $dayKey = $entry->date->format('Y-m-d').'_m'.$entry->id;
 
             $attendanceByEmployee[$id]['days'][$dayKey] = [
-                'sw'          => $entry->sw,
-                'ew'          => $entry->ew,
+                'sw' => $entry->sw,
+                'ew' => $entry->ew,
                 'shift_start' => $entry->shift_start,
-                'shift_end'   => $entry->shift_end,
-                '_date'       => $entry->date->format('Y-m-d'),
-                'is_additive' => !$entry->is_override,
+                'shift_end' => $entry->shift_end,
+                '_date' => $entry->date->format('Y-m-d'),
+                'is_additive' => ! $entry->is_override,
             ];
         }
 
-        // --- Step 3: Compute payroll for each employee ---
-        $calculator = new PayrollCalculator();
-        $entries    = [];
+        // --- Step 3: Approved cash advances for this period, per employee ---
+        // Sum approved advances whose needed_date falls in the run period and that have not
+        // already been locked into a different run. Idempotent across recomputes because
+        // advances are separate records (never wiped/rewritten on the entry itself).
+        $cashAdvanceByEmployee = CashAdvanceRequest::approved()
+            ->whereBetween('needed_date', [$periodStart, $periodEnd])
+            ->where(function ($q) use ($payrollRun) {
+                $q->whereNull('applied_payroll_run_id')
+                    ->orWhere('applied_payroll_run_id', $payrollRun->id);
+            })
+            ->selectRaw('employee_id, SUM(amount) as total')
+            ->groupBy('employee_id')
+            ->pluck('total', 'employee_id');
+
+        // --- Step 4: Compute payroll for each employee ---
+        $calculator = new PayrollCalculator;
+        $entries = [];
 
         foreach ($attendanceByEmployee as ['employee' => $employee, 'days' => $days]) {
             $computed = $calculator->calculate($employee, $days, $holidays);
 
+            $cashAdvance = round((float) ($cashAdvanceByEmployee[$employee->id] ?? 0), 2);
+            $otherDeductions = 0;
+            $totalDeductions = $cashAdvance + $otherDeductions;
+            $netPay = round((float) $computed['gross_pay'] - $totalDeductions, 2);
+
             $entries[] = array_merge([
-                'payroll_run_id'   => $payrollRun->id,
-                'employee_id'      => $employee->id,
-                'cash_advance'     => 0,
-                'other_deductions' => 0,
-                'total_deductions' => 0,
-                'net_pay'          => $computed['gross_pay'],
-                'first_release'    => 0,
-                'second_release'   => 0,
-                'created_at'       => now(),
-                'updated_at'       => now(),
+                'payroll_run_id' => $payrollRun->id,
+                'employee_id' => $employee->id,
+                'cash_advance' => $cashAdvance,
+                'other_deductions' => $otherDeductions,
+                'total_deductions' => $totalDeductions,
+                'net_pay' => $netPay,
+                'first_release' => 0,
+                'second_release' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
             ], $computed);
         }
 
         DB::transaction(function () use ($payrollRun, $entries) {
             $payrollRun->entries()->delete();
-            if (!empty($entries)) {
+            if (! empty($entries)) {
                 PayrollEntry::insert($entries);
             }
         });
 
-        if (!empty($unmatched ?? [])) {
+        if (! empty($unmatched ?? [])) {
             return redirect()->route('payroll-runs.show', $payrollRun)
                 ->with('unmatched', $unmatched);
         }

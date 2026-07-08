@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import InputError from '@/components/input-error';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import { index } from '@/routes/employees';
 
 interface Employee {
@@ -19,22 +20,55 @@ interface Employee {
     shift_start: string;
     shift_end: string;
     is_active: boolean;
+    user?: { id: number; username: string; role: string } | null;
 }
 
 type DialogMode = 'create' | 'edit' | 'delete' | null;
+type ModalTab = 'details' | 'account';
 
 const PAGE_SIZE = 10;
+
+// Suggested login username: lowercase name with all non-alphanumeric characters removed.
+function toUsername(name: string): string {
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function TabBar({ tab, setTab }: { tab: ModalTab; setTab: (t: ModalTab) => void }) {
+    const tabs: ModalTab[] = ['details', 'account'];
+    return (
+        <div className="flex gap-1 border-b mb-4">
+            {tabs.map((t) => (
+                <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTab(t)}
+                    className={cn(
+                        '-mb-px border-b-2 px-3 py-1.5 text-sm font-medium capitalize',
+                        tab === t ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground',
+                    )}
+                >
+                    {t}
+                </button>
+            ))}
+        </div>
+    );
+}
 
 export default function EmployeesIndex({ employees }: { employees: Employee[] }) {
     const [mode, setMode] = useState<DialogMode>(null);
     const [target, setTarget] = useState<Employee | null>(null);
 
+    const [createTab, setCreateTab] = useState<ModalTab>('details');
+    const [editTab, setEditTab] = useState<ModalTab>('details');
+    // Once the admin edits the username by hand, stop auto-suggesting it from the name.
+    const [usernameEdited, setUsernameEdited] = useState(false);
+
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [page, setPage] = useState(1);
 
-    const createForm = useForm({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
-    const editForm = useForm({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '', shift_end: '', is_active: true });
+    const createForm = useForm({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00', username: '', password: '' });
+    const editForm = useForm({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '', shift_end: '', is_active: true, username: '', password: '' });
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
@@ -51,9 +85,16 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
     const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     function openCreate() {
-        createForm.setData({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00' });
+        createForm.setData({ name: '', employee_number: '', gender: '', department: '', daily_rate: '', shift_start: '08:00', shift_end: '17:00', username: '', password: '' });
         createForm.clearErrors();
+        setUsernameEdited(false);
+        setCreateTab('details');
         setMode('create');
+    }
+
+    // Keep the username field in sync with the name until the admin edits it directly.
+    function onCreateNameChange(name: string) {
+        createForm.setData((data) => ({ ...data, name, username: usernameEdited ? data.username : toUsername(name) }));
     }
 
     function openEdit(emp: Employee) {
@@ -67,8 +108,11 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
             shift_start: emp.shift_start.slice(0, 5),
             shift_end: emp.shift_end.slice(0, 5),
             is_active: emp.is_active,
+            username: emp.user?.username ?? '',
+            password: '',
         });
         setTarget(emp);
+        setEditTab('details');
         setMode('edit');
     }
 
@@ -84,12 +128,23 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
 
     function submitCreate(e: React.FormEvent) {
         e.preventDefault();
-        createForm.post('/employees', { onSuccess: closeDialog });
+        createForm.post('/employees', {
+            onSuccess: closeDialog,
+            onError: (errors) => {
+                // Surface account errors by switching to the relevant tab.
+                if (errors.username || errors.password) setCreateTab('account');
+            },
+        });
     }
 
     function submitEdit(e: React.FormEvent) {
         e.preventDefault();
-        editForm.put(`/employees/${target?.id}`, { onSuccess: closeDialog });
+        editForm.put(`/employees/${target?.id}`, {
+            onSuccess: closeDialog,
+            onError: (errors) => {
+                if (errors.username || errors.password) setEditTab('account');
+            },
+        });
     }
 
     function confirmDelete() {
@@ -129,6 +184,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                     <TableHeader>
                         <TableRow>
                             <TableHead>Name</TableHead>
+                            <TableHead>Login</TableHead>
                             <TableHead>Department</TableHead>
                             <TableHead>Daily Rate</TableHead>
                             <TableHead>Shift</TableHead>
@@ -139,7 +195,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                     <TableBody>
                         {paginated.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                     No employees found.
                                 </TableCell>
                             </TableRow>
@@ -147,6 +203,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                             paginated.map((emp) => (
                                 <TableRow key={emp.id}>
                                     <TableCell>{emp.name}</TableCell>
+                                    <TableCell>{emp.user?.username ?? <span className="text-muted-foreground">—</span>}</TableCell>
                                     <TableCell>{emp.department ?? <span className="text-muted-foreground">—</span>}</TableCell>
                                     <TableCell>₱{Number(emp.daily_rate).toLocaleString()}</TableCell>
                                     <TableCell>{emp.shift_start.slice(0, 5)} – {emp.shift_end.slice(0, 5)}</TableCell>
@@ -186,54 +243,79 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                         <DialogTitle>Add Employee</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={submitCreate} className="space-y-4">
-                        <div>
-                            <Label>Name</Label>
-                            <Input value={createForm.data.name} onChange={e => createForm.setData('name', e.target.value)} />
-                            <InputError message={createForm.errors.name} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label>Employee Number <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                                <Input value={createForm.data.employee_number} onChange={e => createForm.setData('employee_number', e.target.value)} placeholder="e.g. EMP-001" />
-                                <InputError message={createForm.errors.employee_number} />
+                        <TabBar tab={createTab} setTab={setCreateTab} />
+
+                        {createTab === 'details' ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <Label>Name</Label>
+                                    <Input value={createForm.data.name} onChange={e => onCreateNameChange(e.target.value)} />
+                                    <InputError message={createForm.errors.name} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label>Employee Number <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                        <Input value={createForm.data.employee_number} onChange={e => createForm.setData('employee_number', e.target.value)} placeholder="e.g. EMP-001" />
+                                        <InputError message={createForm.errors.employee_number} />
+                                    </div>
+                                    <div>
+                                        <Label>Gender <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                        <Select value={createForm.data.gender || '_none'} onValueChange={v => createForm.setData('gender', v === '_none' ? '' : v)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select gender" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="_none">— None —</SelectItem>
+                                                <SelectItem value="Male">Male</SelectItem>
+                                                <SelectItem value="Female">Female</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={createForm.errors.gender} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label>Department <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                    <Input value={createForm.data.department} onChange={e => createForm.setData('department', e.target.value)} />
+                                    <InputError message={createForm.errors.department} />
+                                </div>
+                                <div>
+                                    <Label>Daily Rate (₱)</Label>
+                                    <Input type="number" step="0.01" value={createForm.data.daily_rate} onChange={e => createForm.setData('daily_rate', e.target.value)} />
+                                    <InputError message={createForm.errors.daily_rate} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label>Shift Start</Label>
+                                        <Input type="time" value={createForm.data.shift_start} onChange={e => createForm.setData('shift_start', e.target.value)} />
+                                        <InputError message={createForm.errors.shift_start} />
+                                    </div>
+                                    <div>
+                                        <Label>Shift End</Label>
+                                        <Input type="time" value={createForm.data.shift_end} onChange={e => createForm.setData('shift_end', e.target.value)} />
+                                        <InputError message={createForm.errors.shift_end} />
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <Label>Gender <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                                <Select value={createForm.data.gender || '_none'} onValueChange={v => createForm.setData('gender', v === '_none' ? '' : v)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select gender" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="_none">— None —</SelectItem>
-                                        <SelectItem value="Male">Male</SelectItem>
-                                        <SelectItem value="Female">Female</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={createForm.errors.gender} />
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-sm text-muted-foreground">This creates the employee's login account (role: Employee).</p>
+                                <div>
+                                    <Label>Username</Label>
+                                    <Input
+                                        value={createForm.data.username}
+                                        onChange={e => { setUsernameEdited(true); createForm.setData('username', e.target.value); }}
+                                        autoComplete="off"
+                                    />
+                                    <InputError message={createForm.errors.username} />
+                                </div>
+                                <div>
+                                    <Label>Password</Label>
+                                    <Input type="text" value={createForm.data.password} onChange={e => createForm.setData('password', e.target.value)} autoComplete="off" />
+                                    <InputError message={createForm.errors.password} />
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <Label>Department <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                            <Input value={createForm.data.department} onChange={e => createForm.setData('department', e.target.value)} />
-                            <InputError message={createForm.errors.department} />
-                        </div>
-                        <div>
-                            <Label>Daily Rate (₱)</Label>
-                            <Input type="number" step="0.01" value={createForm.data.daily_rate} onChange={e => createForm.setData('daily_rate', e.target.value)} />
-                            <InputError message={createForm.errors.daily_rate} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label>Shift Start</Label>
-                                <Input type="time" value={createForm.data.shift_start} onChange={e => createForm.setData('shift_start', e.target.value)} />
-                                <InputError message={createForm.errors.shift_start} />
-                            </div>
-                            <div>
-                                <Label>Shift End</Label>
-                                <Input type="time" value={createForm.data.shift_end} onChange={e => createForm.setData('shift_end', e.target.value)} />
-                                <InputError message={createForm.errors.shift_end} />
-                            </div>
-                        </div>
+                        )}
+
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
                             <Button type="submit" disabled={createForm.processing}>Save Employee</Button>
@@ -249,67 +331,88 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                         <DialogTitle>Edit Employee</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={submitEdit} className="space-y-4">
-                        <div>
-                            <Label>Name</Label>
-                            <Input value={editForm.data.name} onChange={e => editForm.setData('name', e.target.value)} />
-                            <InputError message={editForm.errors.name} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label>Employee Number <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                                <Input value={editForm.data.employee_number} onChange={e => editForm.setData('employee_number', e.target.value)} placeholder="e.g. EMP-001" />
-                                <InputError message={editForm.errors.employee_number} />
+                        <TabBar tab={editTab} setTab={setEditTab} />
+
+                        {editTab === 'details' ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <Label>Name</Label>
+                                    <Input value={editForm.data.name} onChange={e => editForm.setData('name', e.target.value)} />
+                                    <InputError message={editForm.errors.name} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label>Employee Number <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                        <Input value={editForm.data.employee_number} onChange={e => editForm.setData('employee_number', e.target.value)} placeholder="e.g. EMP-001" />
+                                        <InputError message={editForm.errors.employee_number} />
+                                    </div>
+                                    <div>
+                                        <Label>Gender <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                        <Select value={editForm.data.gender || '_none'} onValueChange={v => editForm.setData('gender', v === '_none' ? '' : v)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select gender" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="_none">— None —</SelectItem>
+                                                <SelectItem value="Male">Male</SelectItem>
+                                                <SelectItem value="Female">Female</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={editForm.errors.gender} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label>Department <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                    <Input value={editForm.data.department} onChange={e => editForm.setData('department', e.target.value)} />
+                                    <InputError message={editForm.errors.department} />
+                                </div>
+                                <div>
+                                    <Label>Daily Rate (₱)</Label>
+                                    <Input type="number" step="0.01" value={editForm.data.daily_rate} onChange={e => editForm.setData('daily_rate', e.target.value)} />
+                                    <InputError message={editForm.errors.daily_rate} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label>Shift Start</Label>
+                                        <Input type="time" value={editForm.data.shift_start} onChange={e => editForm.setData('shift_start', e.target.value)} />
+                                        <InputError message={editForm.errors.shift_start} />
+                                    </div>
+                                    <div>
+                                        <Label>Shift End</Label>
+                                        <Input type="time" value={editForm.data.shift_end} onChange={e => editForm.setData('shift_end', e.target.value)} />
+                                        <InputError message={editForm.errors.shift_end} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label>Status</Label>
+                                    <Select value={editForm.data.is_active ? 'active' : 'inactive'} onValueChange={v => editForm.setData('is_active', v === 'active')}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="active">Active</SelectItem>
+                                            <SelectItem value="inactive">Inactive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={editForm.errors.is_active} />
+                                </div>
                             </div>
-                            <div>
-                                <Label>Gender <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                                <Select value={editForm.data.gender || '_none'} onValueChange={v => editForm.setData('gender', v === '_none' ? '' : v)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select gender" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="_none">— None —</SelectItem>
-                                        <SelectItem value="Male">Male</SelectItem>
-                                        <SelectItem value="Female">Female</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={editForm.errors.gender} />
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-sm text-muted-foreground">Manage this employee's login account (role: Employee).</p>
+                                <div>
+                                    <Label>Username</Label>
+                                    <Input value={editForm.data.username} onChange={e => editForm.setData('username', e.target.value)} autoComplete="off" />
+                                    <InputError message={editForm.errors.username} />
+                                </div>
+                                <div>
+                                    <Label>New Password <span className="text-muted-foreground font-normal">(leave blank to keep current)</span></Label>
+                                    <Input type="text" value={editForm.data.password} onChange={e => editForm.setData('password', e.target.value)} autoComplete="off" />
+                                    <InputError message={editForm.errors.password} />
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <Label>Department <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                            <Input value={editForm.data.department} onChange={e => editForm.setData('department', e.target.value)} />
-                            <InputError message={editForm.errors.department} />
-                        </div>
-                        <div>
-                            <Label>Daily Rate (₱)</Label>
-                            <Input type="number" step="0.01" value={editForm.data.daily_rate} onChange={e => editForm.setData('daily_rate', e.target.value)} />
-                            <InputError message={editForm.errors.daily_rate} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label>Shift Start</Label>
-                                <Input type="time" value={editForm.data.shift_start} onChange={e => editForm.setData('shift_start', e.target.value)} />
-                                <InputError message={editForm.errors.shift_start} />
-                            </div>
-                            <div>
-                                <Label>Shift End</Label>
-                                <Input type="time" value={editForm.data.shift_end} onChange={e => editForm.setData('shift_end', e.target.value)} />
-                                <InputError message={editForm.errors.shift_end} />
-                            </div>
-                        </div>
-                        <div>
-                            <Label>Status</Label>
-                            <Select value={editForm.data.is_active ? 'active' : 'inactive'} onValueChange={v => editForm.setData('is_active', v === 'active')}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="inactive">Inactive</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <InputError message={editForm.errors.is_active} />
-                        </div>
+                        )}
+
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
                             <Button type="submit" disabled={editForm.processing}>Update Employee</Button>

@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Models\Employee;
@@ -26,31 +27,53 @@ class EmployeeTest extends TestCase
         );
     }
 
-    public function test_can_create_employee(): void
+    public function test_can_create_employee_with_login_account(): void
     {
         $response = $this->actingAsAdmin()->post('/employees', [
-            'name'        => 'Juan Dela Cruz',
-            'department'  => 'ADMIN',
-            'daily_rate'  => 550.00,
+            'name' => 'Juan Dela Cruz',
+            'department' => 'ADMIN',
+            'daily_rate' => 550.00,
             'shift_start' => '08:00',
-            'shift_end'   => '17:00',
+            'shift_end' => '17:00',
+            'username' => 'juandelacruz',
+            'password' => '123700',
         ]);
         $response->assertRedirect('/employees');
-        $this->assertDatabaseHas('employees', ['name' => 'Juan Dela Cruz']);
+
+        $this->assertDatabaseHas('users', ['username' => 'juandelacruz', 'role' => 'employee']);
+        $user = User::where('username', 'juandelacruz')->first();
+        $this->assertDatabaseHas('employees', ['name' => 'Juan Dela Cruz', 'user_id' => $user->id]);
     }
 
-    public function test_can_update_employee(): void
+    public function test_creating_employee_requires_account_fields(): void
     {
-        $employee = Employee::factory()->create();
-        $response = $this->actingAsAdmin()->put("/employees/{$employee->id}", [
-            'name'        => 'Updated Name',
-            'department'  => 'ADMIN',
-            'daily_rate'  => 600.00,
+        $response = $this->actingAsAdmin()->post('/employees', [
+            'name' => 'No Account',
+            'daily_rate' => 500.00,
             'shift_start' => '08:00',
-            'shift_end'   => '17:00',
+            'shift_end' => '17:00',
+        ]);
+
+        $response->assertSessionHasErrors(['username', 'password']);
+    }
+
+    public function test_can_update_employee_and_reset_password(): void
+    {
+        $user = User::factory()->employee()->create(['username' => 'old_name']);
+        $employee = Employee::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAsAdmin()->put("/employees/{$employee->id}", [
+            'name' => 'Updated Name',
+            'department' => 'ADMIN',
+            'daily_rate' => 600.00,
+            'shift_start' => '08:00',
+            'shift_end' => '17:00',
+            'username' => 'updated_name',
+            'password' => 'newpass1',
         ]);
         $response->assertRedirect('/employees');
         $this->assertDatabaseHas('employees', ['id' => $employee->id, 'name' => 'Updated Name']);
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'username' => 'updated_name']);
     }
 
     public function test_can_delete_employee(): void
@@ -58,7 +81,8 @@ class EmployeeTest extends TestCase
         $employee = Employee::factory()->create();
         $response = $this->actingAsAdmin()->delete("/employees/{$employee->id}");
         $response->assertRedirect('/employees');
-        $this->assertDatabaseMissing('employees', ['id' => $employee->id]);
+        // Employee uses soft deletes, so the row remains but is flagged deleted.
+        $this->assertSoftDeleted('employees', ['id' => $employee->id]);
     }
 
     public function test_employee_number_must_be_unique(): void
@@ -66,12 +90,12 @@ class EmployeeTest extends TestCase
         Employee::factory()->create(['employee_number' => 'EMP-001']);
 
         $response = $this->actingAsAdmin()->post('/employees', [
-            'name'            => 'Another Employee',
+            'name' => 'Another Employee',
             'employee_number' => 'EMP-001',
-            'department'      => 'ADMIN',
-            'daily_rate'      => 500.00,
-            'shift_start'     => '08:00',
-            'shift_end'       => '17:00',
+            'department' => 'ADMIN',
+            'daily_rate' => 500.00,
+            'shift_start' => '08:00',
+            'shift_end' => '17:00',
         ]);
 
         $response->assertSessionHasErrors('employee_number');

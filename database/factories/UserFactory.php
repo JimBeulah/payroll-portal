@@ -26,14 +26,39 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'username' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => User::ROLE_ADMIN,
             'remember_token' => Str::random(10),
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    /**
+     * Indicate the user's role.
+     */
+    public function role(string $role): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => $role]);
+    }
+
+    public function admin(): static
+    {
+        return $this->role(User::ROLE_ADMIN);
+    }
+
+    public function hr(): static
+    {
+        return $this->role(User::ROLE_HR);
+    }
+
+    public function employee(): static
+    {
+        return $this->role(User::ROLE_EMPLOYEE);
     }
 
     /**

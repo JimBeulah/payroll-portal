@@ -208,3 +208,14 @@
 [vite] [2m1:38:46 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m info: Types generated for actions, routes, form variants
 [vite]   Plugin: [35m@laravel/vite-plugin-wayfinder[39m
 [server]  2026-06-23 13:40:26 /payroll-runs .. ~ 1s
+[server]  2026-06-23 13:45:04 /settings/profile .. ~ 508.90ms
+[server]  2026-06-23 13:45:06 /settings/appearance .. ~ 507.66ms
+[vite] [2m2:12:26 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/resources/js/components/payroll/shift-calendar-grid.tsx, /resources/css/app.css?direct[22m
+[server]  2026-06-23 14:39:10 /settings/appearance .. ~ 2s
+[server]  2026-06-23 14:39:40 /dashboard .. ~ 498.57ms
+[server]  2026-06-23 14:39:42 /payroll-runs .. ~ 503.98ms
+[server]  2026-06-23 14:39:44 /payroll-runs/3 .. ~ 1s
+[server]  2026-06-23 14:40:00 /logout .. ~ 1s
+[server]  2026-06-23 14:40:02 / .. ~ 506.21ms
+[server]  2026-06-23 14:40:02 /login .. ~ 509.15ms
+[server]  2026-06-23 14:40:03 /payroll-logo.png .. ~ 0.05ms
