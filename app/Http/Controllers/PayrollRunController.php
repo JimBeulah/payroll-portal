@@ -1,13 +1,16 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePayrollRunRequest;
 use App\Http\Requests\UpdatePayrollRunRequest;
 use App\Models\Employee;
-use App\Models\Holiday;
+use App\Models\LeaveRequest;
 use App\Models\PayrollRun;
 use App\Services\AttendanceParser;
+use App\Services\AuditLogger;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -32,6 +35,13 @@ class PayrollRunController extends Controller
         $run->created_by = auth()->id();
         $run->save();
 
+        AuditLogger::record(
+            'payroll_run.created',
+            $run,
+            'Payroll Run: '.$run->period_start->format('M Y'),
+            ['period_start' => $run->period_start->format('Y-m-d'), 'period_end' => $run->period_end->format('Y-m-d')]
+        );
+
         return redirect()->route('payroll-runs.show', $run);
     }
 
@@ -40,7 +50,7 @@ class PayrollRunController extends Controller
         $payrollRun->load('entries.employee', 'uploads', 'manualAttendances.employee');
 
         $periodStart = $payrollRun->period_start->format('Y-m-d');
-        $periodEnd   = $payrollRun->period_end->format('Y-m-d');
+        $periodEnd = $payrollRun->period_end->format('Y-m-d');
 
         // Re-parse the latest uploaded attendance file to get per-day SW/EW and compute late/undertime.
         // This data is not persisted — it's derived on page load so the calendar can show file data.
@@ -52,45 +62,55 @@ class PayrollRunController extends Controller
 
             if (file_exists($fullPath)) {
                 try {
-                    $parsed = (new AttendanceParser())->parse($fullPath);
+                    $parsed = (new AttendanceParser)->parse($fullPath);
 
                     foreach ($parsed as $row) {
                         $emp = Employee::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($row['name']))])
                             ->whereRaw('LOWER(TRIM(department)) = ?', [strtolower(trim($row['department']))])
                             ->first();
 
-                        if (!$emp) continue;
+                        if (! $emp) {
+                            continue;
+                        }
 
                         $shiftStart = substr($emp->shift_start, 0, 5);
-                        $shiftEnd   = substr($emp->shift_end, 0, 5);
+                        $shiftEnd = substr($emp->shift_end, 0, 5);
                         $days = [];
 
                         foreach ($row['attendance'] as $date => $times) {
-                            if ($date < $periodStart || $date > $periodEnd) continue;
-                            if (empty($times['sw']) || empty($times['ew'])) continue;
+                            if ($date < $periodStart || $date > $periodEnd) {
+                                continue;
+                            }
+                            if (empty($times['sw']) || empty($times['ew'])) {
+                                continue;
+                            }
 
                             $lateMin = 0;
-                            $utMin   = 0;
-                            $otMin   = 0;
+                            $utMin = 0;
+                            $otMin = 0;
 
                             try {
                                 $sStart = Carbon::createFromFormat('Y-m-d H:i', "$date $shiftStart");
-                                $sEnd   = Carbon::createFromFormat('Y-m-d H:i', "$date $shiftEnd");
+                                $sEnd = Carbon::createFromFormat('Y-m-d H:i', "$date $shiftEnd");
                                 $aStart = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['sw']}");
-                                $aEnd   = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['ew']}");
+                                $aEnd = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['ew']}");
 
-                                if ($sEnd->lte($sStart))  $sEnd->addDay();
-                                if ($aEnd->lte($aStart)) $aEnd->addDay();
+                                if ($sEnd->lte($sStart)) {
+                                    $sEnd->addDay();
+                                }
+                                if ($aEnd->lte($aStart)) {
+                                    $aEnd->addDay();
+                                }
 
-                                $shiftMins  = (int) $sStart->diffInMinutes($sEnd);
-                                $breakMins  = max(0, $shiftMins - 480);
-                                $bStart     = $sStart->copy()->addMinutes(240);
-                                $bEnd       = $bStart->copy()->addMinutes($breakMins);
+                                $shiftMins = (int) $sStart->diffInMinutes($sEnd);
+                                $breakMins = max(0, $shiftMins - 480);
+                                $bStart = $sStart->copy()->addMinutes(240);
+                                $bEnd = $bStart->copy()->addMinutes($breakMins);
 
                                 if ($aStart->gt($sStart)) {
                                     $raw = (int) $sStart->diffInMinutes($aStart);
                                     if ($breakMins > 0 && $aStart->gt($bStart)) {
-                                        $oe   = $aStart->lte($bEnd) ? $aStart : $bEnd;
+                                        $oe = $aStart->lte($bEnd) ? $aStart : $bEnd;
                                         $raw -= (int) $bStart->diffInMinutes($oe);
                                     }
                                     $lateMin = max(0, $raw);
@@ -99,7 +119,7 @@ class PayrollRunController extends Controller
                                 if ($aEnd->lt($sEnd)) {
                                     $raw = (int) $aEnd->diffInMinutes($sEnd);
                                     if ($breakMins > 0 && $aEnd->lt($bEnd)) {
-                                        $os   = $aEnd->gte($bStart) ? $aEnd : $bStart;
+                                        $os = $aEnd->gte($bStart) ? $aEnd : $bStart;
                                         $raw -= (int) $os->diffInMinutes($bEnd);
                                     }
                                     $utMin = max(0, $raw);
@@ -113,10 +133,10 @@ class PayrollRunController extends Controller
                             }
 
                             $days[$date] = [
-                                'sw'               => $times['sw'],
-                                'ew'               => $times['ew'],
-                                'late_minutes'     => $lateMin,
-                                'undertime_minutes'=> $utMin,
+                                'sw' => $times['sw'],
+                                'ew' => $times['ew'],
+                                'late_minutes' => $lateMin,
+                                'undertime_minutes' => $utMin,
                                 'overtime_minutes' => $otMin,
                             ];
                         }
@@ -129,15 +149,34 @@ class PayrollRunController extends Controller
             }
         }
 
+        // Approved leave, expanded per-day so the calendar can flag unpaid leave days.
+        $leaveData = [];
+        $leaveRequests = LeaveRequest::approved()
+            ->where('start_date', '<=', $periodEnd)
+            ->where('end_date', '>=', $periodStart)
+            ->get();
+
+        foreach ($leaveRequests as $leave) {
+            $rangeStart = max($leave->start_date->format('Y-m-d'), $periodStart);
+            $rangeEnd = min($leave->end_date->format('Y-m-d'), $periodEnd);
+
+            foreach (CarbonPeriod::create($rangeStart, $rangeEnd) as $date) {
+                $leaveData[$leave->employee_id][$date->format('Y-m-d')] = [
+                    'reason' => $leave->reason,
+                ];
+            }
+        }
+
         return Inertia::render('payroll/show', [
-            'run'              => $payrollRun,
-            'entries'          => $payrollRun->entries,
-            'uploads'          => $payrollRun->uploads,
+            'run' => $payrollRun,
+            'entries' => $payrollRun->entries,
+            'uploads' => $payrollRun->uploads,
             'manualAttendances' => $payrollRun->manualAttendances,
-            'employees'        => Employee::where('is_active', true)
+            'employees' => Employee::where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name', 'department', 'shift_start', 'shift_end']),
-            'attendanceData'   => $attendanceData,
+            'attendanceData' => $attendanceData,
+            'leaveData' => $leaveData,
         ]);
     }
 
@@ -147,6 +186,13 @@ class PayrollRunController extends Controller
 
         $payrollRun->update($request->validated());
 
+        AuditLogger::record(
+            'payroll_run.updated',
+            $payrollRun,
+            'Payroll Run: '.$payrollRun->period_start->format('M Y'),
+            $request->validated()
+        );
+
         return back()->with('success', 'Payroll run updated.');
     }
 
@@ -154,11 +200,15 @@ class PayrollRunController extends Controller
     {
         abort_if($payrollRun->isLocked(), 403, 'Locked payroll runs cannot be deleted.');
 
+        $label = 'Payroll Run: '.$payrollRun->period_start->format('M Y');
+
         DB::transaction(function () use ($payrollRun) {
             $payrollRun->entries()->delete();
             $payrollRun->uploads()->delete();
             $payrollRun->delete();
         });
+
+        AuditLogger::record('payroll_run.deleted', $payrollRun, $label);
 
         return redirect()->route('payroll-runs.index')
             ->with('success', 'Payroll run deleted.');

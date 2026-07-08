@@ -42,6 +42,10 @@ interface DayAttendance {
     overtime_minutes: number;
 }
 
+interface LeaveDay {
+    reason: string | null;
+}
+
 interface Props {
     run: PayrollRun;
     entries: PayrollEntry[];
@@ -49,9 +53,10 @@ interface Props {
     employees: Employee[];
     manualAttendances: ManualAttendance[];
     attendanceData: Record<number, Record<string, DayAttendance>>;
+    leaveData: Record<number, Record<string, LeaveDay>>;
 }
 
-export default function PayrollShow({ run, entries, uploads, employees, manualAttendances, attendanceData }: Props) {
+export default function PayrollShow({ run, entries, uploads, employees, manualAttendances, attendanceData, leaveData }: Props) {
     const { props } = usePage<{
         errors: Record<string, string>;
     }>();
@@ -206,6 +211,7 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                                 periodEnd={run.period_end}
                                 manualAttendances={manualAttendances}
                                 attendanceData={attendanceData}
+                                leaveData={leaveData}
                             />
                         </div>
 

@@ -17,14 +17,8 @@ class LeaveRequest extends Model
 
     public const STATUS_REJECTED = 'rejected';
 
-    public const TYPE_LEAVE = 'leave';
-
-    public const TYPE_ABSENT = 'absent';
-
-    public const TYPES = [self::TYPE_LEAVE, self::TYPE_ABSENT];
-
     protected $fillable = [
-        'employee_id', 'type', 'start_date', 'end_date', 'reason', 'status',
+        'employee_id', 'start_date', 'end_date', 'reason', 'status',
         'reviewed_by', 'reviewed_at', 'review_note',
     ];
 

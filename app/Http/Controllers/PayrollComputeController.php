@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\CashAdvanceRequest;
 use App\Models\Employee;
 use App\Models\Holiday;
+use App\Models\LeaveRequest;
 use App\Models\PayrollEntry;
 use App\Models\PayrollManualAttendance;
 use App\Models\PayrollRun;
 use App\Services\AttendanceParser;
 use App\Services\PayrollCalculator;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -105,6 +107,37 @@ class PayrollComputeController extends Controller
                 'is_additive' => ! $entry->is_override,
             ];
         }
+
+        // --- Step 2.5: Drop days covered by approved leave — leave is unpaid ---
+        $leaveRequests = LeaveRequest::approved()
+            ->where('start_date', '<=', $periodEnd)
+            ->where('end_date', '>=', $periodStart)
+            ->get();
+
+        $leaveDatesByEmployee = [];
+        foreach ($leaveRequests as $leave) {
+            $rangeStart = max($leave->start_date->format('Y-m-d'), $periodStart);
+            $rangeEnd = min($leave->end_date->format('Y-m-d'), $periodEnd);
+
+            foreach (CarbonPeriod::create($rangeStart, $rangeEnd) as $date) {
+                $leaveDatesByEmployee[$leave->employee_id][$date->format('Y-m-d')] = true;
+            }
+        }
+
+        foreach ($attendanceByEmployee as $empId => &$data) {
+            $leaveDates = $leaveDatesByEmployee[$empId] ?? [];
+            if (empty($leaveDates)) {
+                continue;
+            }
+
+            foreach ($data['days'] as $dayKey => $times) {
+                $date = $times['_date'] ?? $dayKey;
+                if (isset($leaveDates[$date])) {
+                    unset($data['days'][$dayKey]);
+                }
+            }
+        }
+        unset($data);
 
         // --- Step 3: Approved cash advances for this period, per employee ---
         // Sum approved advances whose needed_date falls in the run period and that have not

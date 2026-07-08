@@ -54,11 +54,22 @@ const employeeNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { auth } = usePage().props;
+    const { auth, pendingRequests } = usePage().props;
     const role = auth.user?.role;
     const canManage = role === 'admin' || role === 'hr';
 
-    const mainNavItems = canManage ? managerNavItems : employeeNavItems;
+    let mainNavItems = canManage ? managerNavItems : employeeNavItems;
+
+    // Add badge to Approvals item if there are pending requests
+    if (canManage && pendingRequests) {
+        const totalPending = (pendingRequests.cashAdvance || 0) + (pendingRequests.leave || 0);
+        mainNavItems = mainNavItems.map((item) =>
+            item.title === 'Approvals'
+                ? { ...item, badge: totalPending > 0 ? totalPending : null }
+                : item,
+        );
+    }
+
     const homeHref = canManage ? dashboard() : '/my-requests';
 
     return (

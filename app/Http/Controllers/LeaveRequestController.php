@@ -13,7 +13,6 @@ class LeaveRequestController extends Controller
 
         LeaveRequest::create([
             'employee_id' => $employee->id,
-            'type' => $request->validated('type'),
             'start_date' => $request->validated('start_date'),
             'end_date' => $request->validated('end_date'),
             'reason' => $request->validated('reason'),

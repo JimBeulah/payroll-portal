@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CashAdvanceRequest;
 use App\Models\PayrollRun;
+use App\Services\AuditLogger;
 
 class PayrollLockController extends Controller
 {
@@ -23,6 +24,12 @@ class PayrollLockController extends Controller
             ->whereNull('applied_payroll_run_id')
             ->update(['applied_payroll_run_id' => $payrollRun->id]);
 
+        AuditLogger::record(
+            'payroll_run.locked',
+            $payrollRun,
+            'Payroll Run: '.$payrollRun->period_start->format('M Y')
+        );
+
         return redirect()->route('payroll-runs.show', $payrollRun)
             ->with('success', 'Payroll run locked.');
     }
@@ -36,6 +43,12 @@ class PayrollLockController extends Controller
         // Release advances claimed by this run so they can be recomputed/re-locked.
         CashAdvanceRequest::where('applied_payroll_run_id', $payrollRun->id)
             ->update(['applied_payroll_run_id' => null]);
+
+        AuditLogger::record(
+            'payroll_run.unlocked',
+            $payrollRun,
+            'Payroll Run: '.$payrollRun->period_start->format('M Y')
+        );
 
         return redirect()->route('payroll-runs.show', $payrollRun)
             ->with('success', 'Payroll run unlocked.');

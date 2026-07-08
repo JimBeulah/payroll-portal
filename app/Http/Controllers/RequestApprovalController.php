@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CashAdvanceRequest;
 use App\Models\LeaveRequest;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -39,14 +40,14 @@ class RequestApprovalController extends Controller
     {
         $this->review($request, $leaveRequest, LeaveRequest::STATUS_APPROVED);
 
-        return back()->with('success', 'Leave/absent request approved.');
+        return back()->with('success', 'Leave request approved.');
     }
 
     public function rejectLeave(Request $request, LeaveRequest $leaveRequest)
     {
         $this->review($request, $leaveRequest, LeaveRequest::STATUS_REJECTED);
 
-        return back()->with('success', 'Leave/absent request rejected.');
+        return back()->with('success', 'Leave request rejected.');
     }
 
     /**
@@ -64,5 +65,15 @@ class RequestApprovalController extends Controller
             'reviewed_at' => now(),
             'review_note' => $validated['review_note'] ?? null,
         ]);
+
+        $type = $model instanceof CashAdvanceRequest ? 'cash_advance' : 'leave';
+        $decision = $status === CashAdvanceRequest::STATUS_APPROVED ? 'approved' : 'rejected';
+
+        AuditLogger::record(
+            "{$type}.{$decision}",
+            $model,
+            $model->employee->name,
+            ['review_note' => $validated['review_note'] ?? null]
+        );
     }
 }

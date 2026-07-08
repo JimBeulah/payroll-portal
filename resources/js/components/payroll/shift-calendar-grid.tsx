@@ -33,6 +33,10 @@ interface DayAttendance {
     overtime_minutes: number;
 }
 
+interface LeaveDay {
+    reason: string | null;
+}
+
 interface Props {
     payrollRunId: number;
     employees: Employee[];
@@ -40,6 +44,7 @@ interface Props {
     periodEnd: string;
     manualAttendances: ManualAttendance[];
     attendanceData: Record<number, Record<string, DayAttendance>>;
+    leaveData: Record<number, Record<string, LeaveDay>>;
 }
 
 function toHHMM(value: string): string {
@@ -124,6 +129,7 @@ export default function ShiftCalendarGrid({
     periodEnd,
     manualAttendances,
     attendanceData,
+    leaveData,
 }: Props) {
     const [selectedEmployee, setSelectedEmployee] = useState<string>(employees[0]?.id.toString() ?? '');
     const [pickerDate, setPickerDate] = useState<string | null>(null);
@@ -289,6 +295,7 @@ export default function ShiftCalendarGrid({
                         const dateStr = date ? formatDateString(date) : null;
                         const attendance = dateStr ? attendanceByDate[dateStr] : null;
                         const excelDay = dateStr ? ((attendanceData[Number(selectedEmployee)] ?? {})[dateStr] ?? null) : null;
+                        const leaveDay = dateStr ? ((leaveData[Number(selectedEmployee)] ?? {})[dateStr] ?? null) : null;
                         const inPeriod = date ? isInPeriod(date) : false;
                         const today = date ? isToday(date) : false;
                         const hasOverride = attendance?.is_override ?? false;
@@ -302,11 +309,13 @@ export default function ShiftCalendarGrid({
                                     transition-colors
                                     ${!date || !inPeriod
                                         ? 'bg-muted/30 border-transparent cursor-default opacity-40'
-                                        : attendance
-                                            ? 'bg-primary/10 border-primary/40 hover:bg-primary/20'
-                                            : excelDay
-                                                ? 'bg-muted/30 border-border hover:bg-muted/50'
-                                                : 'bg-background border-border hover:bg-muted'
+                                        : leaveDay
+                                            ? 'bg-sky-500/10 border-sky-400/50 hover:bg-sky-500/20'
+                                            : attendance
+                                                ? 'bg-primary/10 border-primary/40 hover:bg-primary/20'
+                                                : excelDay
+                                                    ? 'bg-muted/30 border-border hover:bg-muted/50'
+                                                    : 'bg-background border-border hover:bg-muted'
                                     }
                                     ${today ? 'ring-1 ring-amber-500' : ''}
                                 `}
@@ -315,8 +324,22 @@ export default function ShiftCalendarGrid({
                                     {date && date.getDate()}
                                 </div>
 
+                                {/* Approved leave — unpaid, takes priority over attendance display */}
+                                {leaveDay && (
+                                    <div className="text-[11px] space-y-0.5">
+                                        <div className="text-[9px] text-sky-600 dark:text-sky-400 font-bold uppercase leading-none">
+                                            Leave (Unpaid)
+                                        </div>
+                                        {leaveDay.reason && (
+                                            <div className="text-muted-foreground truncate" title={leaveDay.reason}>
+                                                {leaveDay.reason}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Excel attendance (from uploaded file) */}
-                                {excelDay && !hasOverride && (
+                                {excelDay && !hasOverride && !leaveDay && (
                                     <div className="text-[11px] space-y-0.5">
                                         <div className="flex items-center gap-1">
                                             <span className="text-[9px] uppercase text-muted-foreground font-semibold shrink-0">T</span>
@@ -335,7 +358,7 @@ export default function ShiftCalendarGrid({
                                 )}
 
                                 {/* Manual attendance entry */}
-                                {attendance && (() => {
+                                {attendance && !leaveDay && (() => {
                                     const stats = attendance.sw && attendance.ew
                                         ? computeDayStats(attendance.sw, attendance.ew, attendance.shift_start, attendance.shift_end)
                                         : null;

@@ -17,7 +17,7 @@ class StoreCashAdvanceRequest extends FormRequest
         return [
             'amount' => ['required', 'numeric', 'min:0.01', 'max:9999999.99'],
             'needed_date' => ['required', 'date'],
-            'reason' => ['nullable', 'string', 'max:2000'],
+            'reason' => ['required', 'string', 'max:2000'],
         ];
     }
 }

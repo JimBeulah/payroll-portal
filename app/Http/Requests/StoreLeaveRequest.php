@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\LeaveRequest;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreLeaveRequest extends FormRequest
 {
@@ -16,10 +14,9 @@ class StoreLeaveRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['required', Rule::in(LeaveRequest::TYPES)],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'reason' => ['nullable', 'string', 'max:2000'],
+            'reason' => ['required', 'string', 'max:2000'],
         ];
     }
 }

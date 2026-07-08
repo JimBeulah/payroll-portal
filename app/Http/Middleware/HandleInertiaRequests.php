@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\CashAdvanceRequest;
+use App\Models\LeaveRequest;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,16 +37,23 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $canManage = $user && ($user->role === 'admin' || $user->role === 'hr');
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'pendingRequests' => $canManage ? [
+                'cashAdvance' => fn () => CashAdvanceRequest::pending()->count(),
+                'leave' => fn () => LeaveRequest::pending()->count(),
+            ] : null,
             'flash' => [
-                'success'   => fn () => $request->session()->get('success'),
-                'error'     => fn () => $request->session()->get('error'),
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
                 'unmatched' => fn () => $request->session()->get('unmatched'),
             ],
         ];

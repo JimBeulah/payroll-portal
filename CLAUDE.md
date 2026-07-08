@@ -15,7 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Charts: Recharts
 - PDF Generation: DomPDF
 - Excel Export: PHPSpreadsheet
-- Authentication: Laravel Fortify (built-in user management)
+- Authentication: Laravel Fortify (built-in user management, passkeys, 2FA)
+- Authorization: Role-based access control (admin, hr, employee)
 
 ## Development Commands
 
@@ -81,10 +82,14 @@ npm run build                        # Build frontend (outputs to public/build/)
 ### Backend (Laravel)
 
 **Directory Structure:**
-- `app/Http/Controllers/` - Request handlers for payroll, employees, holidays, etc.
-- `app/Models/` - Eloquent models (User, Employee, PayrollRun, PayrollEntry, AttendanceUpload, Holiday, AppSetting)
+- `app/Http/Controllers/` - Request handlers (payroll, employees, holidays, requests, approvals)
+  - Admin/HR routes: Payroll, employees, holidays, attendance, request approvals
+  - Employee routes: Cash advance & leave requests
+- `app/Http/Middleware/` - Middleware (auth guards, role checks, Inertia setup)
+  - `EnsureUserHasRole` - Role-based access control via `middleware('role:admin,hr')`
+- `app/Models/` - Eloquent models (User, Employee, PayrollRun, PayrollEntry, CashAdvanceRequest, LeaveRequest, AttendanceUpload, Holiday, AppSetting)
 - `app/Actions/` - Reusable business logic (separated from controllers)
-- `app/Services/` - Domain services for complex operations
+- `app/Services/` - Domain services (PayrollCalculator, AttendanceParser, PayrollExportService)
 - `app/Concerns/` - Shared traits for models/classes
 - `routes/web.php` - All web routes (protected by `auth` + `verified` middleware)
 - `database/migrations/` - Schema definitions
@@ -92,15 +97,25 @@ npm run build                        # Build frontend (outputs to public/build/)
 - `database/seeders/` - Database seeders
 
 **Key Models:**
-- **User** - Authentication via Fortify (supports passkeys)
-- **Employee** - Store employee info, rates, deductions
+- **User** - Authentication via Fortify (supports passkeys, 2FA); has `role` field (admin, hr, employee)
+- **Employee** - Store employee info, rates, deductions; linked to User via `hasOne` relationship
 - **PayrollRun** - Group of payroll entries for a specific pay period
 - **PayrollEntry** - Individual employee payroll calculation (linked to PayrollRun)
 - **AttendanceUpload** - CSV/Excel uploads for attendance data
+- **PayrollManualAttendance** - Manual attendance overrides for specific dates
 - **Holiday** - Public holidays for payroll calculations
+- **CashAdvanceRequest** - Employee cash advance requests (pending/approved/rejected)
+- **LeaveRequest** - Employee leave requests (pending/approved/rejected)
 - **AppSetting** - Application configuration (company logo, name, payslip settings)
 
 **Key Routes (all protected by auth):**
+
+*Employee Self-Service (any authenticated user):*
+- `GET /my-requests` - Employee request portal (cash advance & leave)
+- `POST /my-requests/cash-advance` - Submit cash advance request
+- `POST /my-requests/leave` - Submit leave request
+
+*Admin/HR Only (requires `role:admin,hr`):*
 - `POST /payroll-runs/{id}/compute` - Calculate payroll entries
 - `POST /payroll-runs/{id}/lock` - Lock payroll run (prevent edits)
 - `POST /payroll-runs/{id}/unlock` - Unlock payroll run
@@ -108,6 +123,11 @@ npm run build                        # Build frontend (outputs to public/build/)
 - `GET /payroll-runs/{id}/payslips/download-all` - Zip of all payslips
 - `GET /payroll-runs/{id}/payslips/print` - Batch print view (4 payslips per A4)
 - `GET /payroll-runs/{id}/export` - Export payroll data to Excel
+- `GET /approvals` - View & manage pending cash advance & leave requests
+- `POST /approvals/cash-advance/{id}/approve` - Approve cash advance
+- `POST /approvals/cash-advance/{id}/reject` - Reject cash advance
+- `POST /approvals/leave/{id}/approve` - Approve leave request
+- `POST /approvals/leave/{id}/reject` - Reject leave request
 
 ### Frontend (React + Inertia.js)
 
@@ -115,6 +135,12 @@ npm run build                        # Build frontend (outputs to public/build/)
 
 **Directory Structure:**
 - `resources/js/pages/` - Inertia page components (one per route, auto-discovered by Wayfinder)
+  - `auth/` - Login, register, 2FA, password reset
+  - `dashboard.tsx` - Landing page (redirects employees to `/my-requests`)
+  - `requests/` - Employee self-service (cash advance & leave requests)
+  - `approvals/` - Admin/HR request approval dashboard
+  - `payroll/`, `employees/`, `holidays/` - Admin/HR management pages
+  - `settings/` - Profile, security, company, appearance settings
 - `resources/js/components/` - Reusable UI components (forms, modals, tables, etc.)
 - `resources/js/layouts/` - Page layouts (app layout with navigation, auth layout)
 - `resources/js/hooks/` - Custom React hooks
@@ -138,6 +164,50 @@ npm run build                        # Build frontend (outputs to public/build/)
 - Data tables with sorting, pagination, and filtering (recharts for charts)
 - Form components using Inertia form helpers (InertiaForm)
 - Page transitions via Inertia (no loading spinners needed by default)
+
+## Role-Based Access Control
+
+**User Roles:**
+- **admin** - Full system access (payroll, employees, holidays, request approvals)
+- **hr** - HR operations (same as admin for payroll & request management)
+- **employee** - Self-service only (submit cash advance & leave requests, view own requests)
+
+**Implementation:**
+- User model has `role` column (stored in DB, not via separate `roles` table)
+- `App\Http\Middleware\EnsureUserHasRole` guards admin/HR routes
+- Usage: `Route::middleware('role:admin,hr')->group(function () { ... })`
+- Employees redirected to `/my-requests` from dashboard if they lack payroll access
+
+**Dashboard Behavior:**
+- All authenticated users land on `/dashboard` (generic landing page)
+- Controller redirects employees → `/my-requests` (self-service portal)
+- Admin/HR stay on dashboard (see overview/stats)
+
+## Employee Request Management
+
+Employees can submit and track requests; admins/HR approve/reject them.
+
+**Cash Advance Requests:**
+- Employee submits via `/my-requests` (amount, reason)
+- Status: pending → approved/rejected
+- Admin/HR view & action via `/approvals`
+
+**Leave Requests:**
+- Employee submits via `/my-requests` (start date, end date, reason)
+- Status: pending → approved/rejected
+- Admin/HR view & action via `/approvals`
+
+**Models:**
+- `CashAdvanceRequest` - has employee_id, amount, reason, status, approval_notes
+- `LeaveRequest` - has employee_id, start_date, end_date, reason, status, approval_notes
+
+**Routes (request handling):**
+- `POST /my-requests/cash-advance` - Create cash advance (employee)
+- `POST /my-requests/leave` - Create leave request (employee)
+- `POST /approvals/cash-advance/{id}/approve` - Approve (admin/HR)
+- `POST /approvals/cash-advance/{id}/reject` - Reject (admin/HR)
+- `POST /approvals/leave/{id}/approve` - Approve (admin/HR)
+- `POST /approvals/leave/{id}/reject` - Reject (admin/HR)
 
 ## Database
 
@@ -185,7 +255,10 @@ php artisan migrate:fresh --seed # Reset DB and run seeders
 ## Important Notes
 
 - **Inertia Refresh:** After CRUD operations, use `redirect()` or `Inertia::location()` to reload page — don't manually refetch
-- **Auth:** All routes in `web.php` require `auth` + `verified` middleware. Settings routes require admin role (see `routes/settings.php`)
+- **Auth:** All routes in `web.php` require `auth` + `verified` middleware
+- **Roles:** Admin/HR routes guarded by `middleware('role:admin,hr')` — employees are denied access and stay on employee portal
+- **Employee Portal:** Employees with a linked `Employee` record can submit cash advance & leave requests; view their request status in `/my-requests`
+- **Dashboard:** Redirects employees away from payroll dashboard to `/my-requests` (self-service only)
 - **Queue:** Background jobs use database driver by default (not production-ready) — switch to Redis/Beanstalkd for production
 - **CSV Parsing:** Attendance uploads are parsed with configurable column mappings (stored in `AppSetting`)
 - **Payslip Lock:** Once a payroll run is locked, payroll entries cannot be edited — unlock feature available
@@ -195,7 +268,7 @@ php artisan migrate:fresh --seed # Reset DB and run seeders
 
 **Branch Strategy:** Main branch is `main`. Feature branches follow `feature/*` or `fix/*` naming.
 
-**Recent Work:** Focus on payroll run features, payslip generation (PDF/print), Excel exports, and employee management UI/modals.
+**Recent Work:** Role-based access control (admin/hr/employee), employee request management (cash advance & leave), request approvals, and employee self-service portal.
 
 ## Type Definitions
 

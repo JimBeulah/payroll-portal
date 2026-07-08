@@ -49,7 +49,6 @@ class RoleAccessTest extends TestCase
         ])->assertRedirect('/my-requests');
 
         $this->actingAs($user)->post('/my-requests/leave', [
-            'type' => 'leave',
             'start_date' => '2026-05-12',
             'end_date' => '2026-05-13',
             'reason' => 'Family matter',
@@ -62,7 +61,7 @@ class RoleAccessTest extends TestCase
         ]);
         $this->assertDatabaseHas('leave_requests', [
             'employee_id' => $employeeId,
-            'type' => 'leave',
+            'reason' => 'Family matter',
             'status' => 'pending',
         ]);
     }
@@ -75,6 +74,7 @@ class RoleAccessTest extends TestCase
             'employee_id' => $employee->id,
             'amount' => 500,
             'needed_date' => '2026-05-10',
+            'reason' => 'Emergency expense',
             'status' => 'pending',
         ]);
 
@@ -113,14 +113,13 @@ class RoleAccessTest extends TestCase
         $this->actingAs($created)->get('/my-requests')->assertOk();
     }
 
-    public function test_leave_request_rejects_invalid_type(): void
+    public function test_leave_request_requires_reason(): void
     {
         $user = $this->employeeUser();
 
         $this->actingAs($user)->post('/my-requests/leave', [
-            'type' => 'vacation',
             'start_date' => '2026-05-12',
             'end_date' => '2026-05-13',
-        ])->assertSessionHasErrors('type');
+        ])->assertSessionHasErrors('reason');
     }
 }

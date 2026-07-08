@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -6,10 +6,13 @@ import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
+import { index as indexAuditLogs } from '@/routes/audit-logs';
 import { edit as editCompany } from '@/routes/company';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
+import { index as indexUsers } from '@/routes/users';
 import type { NavItem } from '@/types';
+import type { Auth } from '@/types/auth';
 
 const sidebarNavItems: NavItem[] = [
     {
@@ -31,12 +34,32 @@ const sidebarNavItems: NavItem[] = [
         title: 'Company',
         href: editCompany(),
         icon: null,
+        adminOnly: true,
+    },
+    {
+        title: 'Users',
+        href: indexUsers(),
+        icon: null,
+        roles: ['admin'],
+    },
+    {
+        title: 'Audit Logs',
+        href: indexAuditLogs(),
+        icon: null,
+        roles: ['admin'],
     },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
-    const navItems = sidebarNavItems;
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const isAdmin = auth.user.role === 'admin' || auth.user.role === 'hr';
+    const navItems = sidebarNavItems.filter((item) => {
+        if (item.roles) {
+return item.roles.includes(auth.user.role);
+}
+        return !item.adminOnly || isAdmin;
+    });
 
     return (
         <div className="px-4 py-6">
