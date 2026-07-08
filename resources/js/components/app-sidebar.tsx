@@ -56,12 +56,12 @@ const employeeNavItems: NavItem[] = [
 export function AppSidebar() {
     const { auth, pendingRequests } = usePage().props;
     const role = auth.user?.role;
-    const canManage = role === 'admin' || role === 'hr';
+    const canView = role === 'admin' || role === 'hr' || role === 'overseer';
 
-    let mainNavItems = canManage ? managerNavItems : employeeNavItems;
+    let mainNavItems = canView ? managerNavItems : employeeNavItems;
 
     // Add badge to Approvals item if there are pending requests
-    if (canManage && pendingRequests) {
+    if (canView && pendingRequests) {
         const totalPending = (pendingRequests.cashAdvance || 0) + (pendingRequests.leave || 0);
         mainNavItems = mainNavItems.map((item) =>
             item.title === 'Approvals'
@@ -70,7 +70,7 @@ export function AppSidebar() {
         );
     }
 
-    const homeHref = canManage ? dashboard() : '/my-requests';
+    const homeHref = canView ? dashboard() : '/my-requests';
 
     return (
         <Sidebar collapsible="icon" variant="floating">

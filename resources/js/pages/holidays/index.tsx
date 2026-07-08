@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import type { Auth } from '@/types/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,9 @@ type DialogMode = 'create' | 'edit' | 'delete' | null;
 const PAGE_SIZE = 10;
 
 export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const canEdit = auth.user?.role === 'admin' || auth.user?.role === 'hr';
+
     const [mode, setMode] = useState<DialogMode>(null);
     const [target, setTarget] = useState<Holiday | null>(null);
 
@@ -87,7 +91,7 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
             <div className="p-6 space-y-4">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold">Holidays</h1>
-                    <Button onClick={openCreate}>Add Holiday</Button>
+                    {canEdit && <Button onClick={openCreate}>Add Holiday</Button>}
                 </div>
 
                 {/* Search & Filter */}
@@ -137,8 +141,12 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="space-x-2">
-                                        <Button variant="outline" size="sm" onClick={() => openEdit(h)}>Edit</Button>
-                                        <Button variant="destructive" size="sm" onClick={() => openDelete(h)}>Delete</Button>
+                                        {canEdit && (
+                                            <>
+                                                <Button variant="outline" size="sm" onClick={() => openEdit(h)}>Edit</Button>
+                                                <Button variant="destructive" size="sm" onClick={() => openDelete(h)}>Delete</Button>
+                                            </>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))

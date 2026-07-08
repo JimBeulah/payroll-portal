@@ -1,5 +1,6 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import type { Auth } from '@/types/auth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -90,6 +91,9 @@ export default function ApprovalsIndex({
     cashAdvances: CashAdvance[];
     leaveRequests: LeaveRequest[];
 }) {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const canEdit = auth.user?.role === 'admin' || auth.user?.role === 'hr';
+
     const [target, setTarget] = useState<ReviewTarget | null>(null);
     const form = useForm({ review_note: '' });
 
@@ -211,7 +215,7 @@ return;
                                                 />
                                             </TableCell>
                                             <TableCell className="space-x-2 text-right">
-                                                {r.status === 'pending' ? (
+                                                {canEdit && r.status === 'pending' ? (
                                                     <>
                                                         <Button
                                                             size="sm"
@@ -245,7 +249,9 @@ return;
                                                     <span className="text-xs text-muted-foreground">
                                                         {r.reviewer
                                                             ? `by ${r.reviewer.name}`
-                                                            : 'Reviewed'}
+                                                            : r.status === 'pending'
+                                                                ? 'Pending'
+                                                                : 'Reviewed'}
                                                     </span>
                                                 )}
                                             </TableCell>
@@ -305,7 +311,7 @@ return;
                                                 />
                                             </TableCell>
                                             <TableCell className="space-x-2 text-right">
-                                                {r.status === 'pending' ? (
+                                                {canEdit && r.status === 'pending' ? (
                                                     <>
                                                         <Button
                                                             size="sm"
@@ -339,7 +345,9 @@ return;
                                                     <span className="text-xs text-muted-foreground">
                                                         {r.reviewer
                                                             ? `by ${r.reviewer.name}`
-                                                            : 'Reviewed'}
+                                                            : r.status === 'pending'
+                                                                ? 'Pending'
+                                                                : 'Reviewed'}
                                                     </span>
                                                 )}
                                             </TableCell>

@@ -13,7 +13,7 @@ class DashboardController extends Controller
     public function index()
     {
         // Employees have no payroll dashboard — send them to their request portal.
-        if (! request()->user()->canManagePayroll()) {
+        if (! request()->user()->canViewPayroll()) {
             return redirect()->route('my-requests.index');
         }
 

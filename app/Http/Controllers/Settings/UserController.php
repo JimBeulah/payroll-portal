@@ -17,7 +17,7 @@ class UserController extends Controller
     public function index(): Response
     {
         return Inertia::render('settings/users/index', [
-            'users' => User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_HR])
+            'users' => User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_HR, User::ROLE_OVERSEER])
                 ->orderBy('name')
                 ->get(['id', 'name', 'username', 'email', 'role']),
         ]);

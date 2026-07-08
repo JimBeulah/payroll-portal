@@ -8,6 +8,7 @@ import { Upload, Calculator } from 'lucide-react';
 import PayrollSummaryTable, { PayrollEntry } from '@/components/payroll/payroll-summary-table';
 import DeductionSheet from '@/components/payroll/deduction-sheet';
 import ShiftCalendarGrid from '@/components/payroll/shift-calendar-grid';
+import type { Auth } from '@/types/auth';
 
 interface PayrollRun {
     id: number; period_start: string; period_end: string;
@@ -59,7 +60,9 @@ interface Props {
 export default function PayrollShow({ run, entries, uploads, employees, manualAttendances, attendanceData, leaveData }: Props) {
     const { props } = usePage<{
         errors: Record<string, string>;
+        auth: Auth;
     }>();
+    const canEdit = props.auth.user?.role === 'admin' || props.auth.user?.role === 'hr';
 
     const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
     const [uploading, setUploading] = useState(false);
@@ -119,7 +122,7 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                     </div>
                     <div className="flex gap-2 items-center">
                         <Badge variant={isLocked ? 'default' : 'secondary'}>{run.status}</Badge>
-                        {!isLocked && entries.length > 0 && (
+                        {canEdit && !isLocked && entries.length > 0 && (
                             <Button onClick={lock} variant="destructive">Lock Run</Button>
                         )}
                         {isLocked && (
@@ -135,7 +138,7 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                                     onClick={() => window.open(`/payroll-runs/${run.id}/export`, '_blank')}>
                                     Export Excel
                                 </Button>
-                                <Button onClick={unlock} variant="destructive">Unlock Run</Button>
+                                {canEdit && <Button onClick={unlock} variant="destructive">Unlock Run</Button>}
                             </>
                         )}
                     </div>
@@ -152,25 +155,27 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                         {/* Step 1 — Upload */}
                         <div className="p-4 space-y-3">
                             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Step 1</p>
-                            <div className="flex items-center gap-3">
-                                <input
-                                    ref={fileRef}
-                                    type="file"
-                                    accept=".xlsx,.xls"
-                                    className="hidden"
-                                    onChange={handleFileSelected}
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    disabled={uploading}
-                                    onClick={() => fileRef.current?.click()}
-                                >
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    {uploading ? 'Uploading…' : 'Upload Attendance File'}
-                                </Button>
-                                <span className="text-xs text-muted-foreground">Accepts .xlsx / .xls</span>
-                            </div>
+                            {canEdit && (
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        ref={fileRef}
+                                        type="file"
+                                        accept=".xlsx,.xls"
+                                        className="hidden"
+                                        onChange={handleFileSelected}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={uploading}
+                                        onClick={() => fileRef.current?.click()}
+                                    >
+                                        <Upload className="w-4 h-4 mr-2" />
+                                        {uploading ? 'Uploading…' : 'Upload Attendance File'}
+                                    </Button>
+                                    <span className="text-xs text-muted-foreground">Accepts .xlsx / .xls</span>
+                                </div>
+                            )}
 
                             {uploads.length > 0 && (
                                 <div className="text-sm space-y-1">
@@ -181,17 +186,19 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                                             <span className="text-xs text-muted-foreground">
                                                 {new Date(u.uploaded_at).toLocaleString()}
                                             </span>
-                                            <button
-                                                type="button"
-                                                className="ml-1 text-xs text-red-500 hover:text-red-700 hover:underline"
-                                                onClick={() => {
-                                                    if (confirm(`Remove "${u.filename}"?`)) {
-                                                        router.delete(`/attendance-uploads/${u.id}`);
-                                                    }
-                                                }}
-                                            >
-                                                Remove
-                                            </button>
+                                            {canEdit && (
+                                                <button
+                                                    type="button"
+                                                    className="ml-1 text-xs text-red-500 hover:text-red-700 hover:underline"
+                                                    onClick={() => {
+                                                        if (confirm(`Remove "${u.filename}"?`)) {
+                                                            router.delete(`/attendance-uploads/${u.id}`);
+                                                        }
+                                                    }}
+                                                >
+                                                    Remove
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -212,27 +219,30 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                                 manualAttendances={manualAttendances}
                                 attendanceData={attendanceData}
                                 leaveData={leaveData}
+                                readOnly={!canEdit}
                             />
                         </div>
 
                         {/* Step 3 — Compute */}
-                        <div className="p-4 space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Step 3</p>
-                            <div className="flex items-center gap-3">
-                                <Button
-                                    onClick={compute}
-                                    disabled={uploads.length === 0}
-                                >
-                                    <Calculator className="w-4 h-4 mr-2" />
-                                    Compute Payroll
-                                </Button>
-                                {uploads.length === 0 && (
-                                    <span className="text-xs text-muted-foreground">
-                                        Upload an attendance file first
-                                    </span>
-                                )}
+                        {canEdit && (
+                            <div className="p-4 space-y-2">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Step 3</p>
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        onClick={compute}
+                                        disabled={uploads.length === 0}
+                                    >
+                                        <Calculator className="w-4 h-4 mr-2" />
+                                        Compute Payroll
+                                    </Button>
+                                    {uploads.length === 0 && (
+                                        <span className="text-xs text-muted-foreground">
+                                            Upload an attendance file first
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
 
@@ -244,7 +254,7 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
                         <PayrollSummaryTable
                             entries={entries}
                             isLocked={isLocked}
-                            onEdit={setSelectedEntry}
+                            onEdit={canEdit ? setSelectedEntry : undefined}
                             onDownloadSlip={downloadSlip}
                         />
                     </div>

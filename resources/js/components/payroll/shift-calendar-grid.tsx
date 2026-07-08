@@ -45,6 +45,7 @@ interface Props {
     manualAttendances: ManualAttendance[];
     attendanceData: Record<number, Record<string, DayAttendance>>;
     leaveData: Record<number, Record<string, LeaveDay>>;
+    readOnly?: boolean;
 }
 
 function toHHMM(value: string): string {
@@ -130,6 +131,7 @@ export default function ShiftCalendarGrid({
     manualAttendances,
     attendanceData,
     leaveData,
+    readOnly = false,
 }: Props) {
     const [selectedEmployee, setSelectedEmployee] = useState<string>(employees[0]?.id.toString() ?? '');
     const [pickerDate, setPickerDate] = useState<string | null>(null);
@@ -173,7 +175,7 @@ export default function ShiftCalendarGrid({
     }
 
     function handleDateClick(date: Date | null) {
-        if (!date || !employee) return;
+        if (readOnly || !date || !employee) return;
         const dateStr = formatDateString(date);
         if (dateStr < periodStart || dateStr > periodEnd) return;
         setPickerDate(dateStr);
@@ -305,7 +307,7 @@ export default function ShiftCalendarGrid({
                                 key={idx}
                                 onClick={() => handleDateClick(date)}
                                 className={`
-                                    min-h-20 p-2 rounded border text-xs relative cursor-pointer
+                                    min-h-20 p-2 rounded border text-xs relative ${readOnly ? 'cursor-default' : 'cursor-pointer'}
                                     transition-colors
                                     ${!date || !inPeriod
                                         ? 'bg-muted/30 border-transparent cursor-default opacity-40'

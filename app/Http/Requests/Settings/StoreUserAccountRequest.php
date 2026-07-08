@@ -17,7 +17,7 @@ class StoreUserAccountRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
             'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['required', 'in:admin,hr'],
+            'role' => ['required', 'in:admin,hr,overseer'],
             'password' => ['required', 'string', 'min:6'],
         ];
     }

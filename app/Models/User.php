@@ -26,7 +26,9 @@ class User extends Authenticatable implements PasskeyUser
 
     public const ROLE_EMPLOYEE = 'employee';
 
-    public const ROLES = [self::ROLE_ADMIN, self::ROLE_HR, self::ROLE_EMPLOYEE];
+    public const ROLE_OVERSEER = 'overseer';
+
+    public const ROLES = [self::ROLE_ADMIN, self::ROLE_HR, self::ROLE_EMPLOYEE, self::ROLE_OVERSEER];
 
     /**
      * Get the attributes that should be cast.
@@ -65,12 +67,25 @@ class User extends Authenticatable implements PasskeyUser
         return $this->role === self::ROLE_EMPLOYEE;
     }
 
+    public function isOverseer(): bool
+    {
+        return $this->role === self::ROLE_OVERSEER;
+    }
+
     /**
      * Admins and HR can manage payroll, employees, and approve requests.
      */
     public function canManagePayroll(): bool
     {
         return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_HR], true);
+    }
+
+    /**
+     * Admins, HR, and overseers can view payroll data (overseers are read-only).
+     */
+    public function canViewPayroll(): bool
+    {
+        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_HR, self::ROLE_OVERSEER], true);
     }
 
     /**

@@ -28,12 +28,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('my-requests/cash-advance', [CashAdvanceRequestController::class, 'store'])->name('my-requests.cash-advance.store');
     Route::post('my-requests/leave', [LeaveRequestController::class, 'store'])->name('my-requests.leave.store');
 
-    // --- Admin + HR: payroll management & request approvals ---
-    Route::middleware('role:admin,hr')->group(function () {
-        Route::resource('employees', EmployeeController::class);
-        Route::resource('holidays', HolidayController::class);
+    // --- Admin + HR + Overseer: read-only payroll/employee/holiday data & approvals list ---
+    // Overseer can view everything below but cannot create/edit/delete/approve/compute/lock.
+    Route::middleware('role:admin,hr,overseer')->group(function () {
+        Route::resource('employees', EmployeeController::class)->only(['index', 'show']);
+        Route::resource('holidays', HolidayController::class)->only(['index', 'show']);
+        Route::resource('payroll-runs', PayrollRunController::class)->only(['index', 'show']);
 
-        Route::resource('payroll-runs', PayrollRunController::class)->only(['index', 'create', 'store', 'show', 'update', 'destroy']);
+        Route::get('payroll-entries/{payrollEntry}/payslip', [PayslipController::class, 'download'])->name('payslip.download');
+        Route::get('payroll-runs/{payrollRun}/payslips/download-all', [PayslipController::class, 'downloadAll'])->name('payslip.download-all');
+        Route::get('payroll-runs/{payrollRun}/payslips/print', [PayslipController::class, 'printAll'])->name('payslip.print-all');
+
+        Route::get('payroll-runs/{payrollRun}/export', [PayrollExportController::class, 'show'])->name('payroll-runs.export');
+
+        Route::get('approvals', [RequestApprovalController::class, 'index'])->name('approvals.index');
+    });
+
+    // --- Admin + HR only: payroll management & request approvals (write actions) ---
+    Route::middleware('role:admin,hr')->group(function () {
+        Route::resource('employees', EmployeeController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
+        Route::resource('holidays', HolidayController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
+        Route::resource('payroll-runs', PayrollRunController::class)->only(['create', 'store', 'update', 'destroy']);
 
         Route::post('payroll-runs/{payrollRun}/upload', [AttendanceUploadController::class, 'store'])->name('payroll-runs.upload');
         Route::delete('attendance-uploads/{attendanceUpload}', [AttendanceUploadController::class, 'destroy'])->name('attendance-uploads.destroy');
@@ -49,14 +64,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::put('payroll-entries/{payrollEntry}', [PayrollEntryController::class, 'update'])->name('payroll-entries.update');
 
-        Route::get('payroll-entries/{payrollEntry}/payslip', [PayslipController::class, 'download'])->name('payslip.download');
-        Route::get('payroll-runs/{payrollRun}/payslips/download-all', [PayslipController::class, 'downloadAll'])->name('payslip.download-all');
-        Route::get('payroll-runs/{payrollRun}/payslips/print', [PayslipController::class, 'printAll'])->name('payslip.print-all');
-
-        Route::get('payroll-runs/{payrollRun}/export', [PayrollExportController::class, 'show'])->name('payroll-runs.export');
-
         // Request approvals
-        Route::get('approvals', [RequestApprovalController::class, 'index'])->name('approvals.index');
         Route::post('approvals/cash-advance/{cashAdvanceRequest}/approve', [RequestApprovalController::class, 'approveCashAdvance'])->name('approvals.cash-advance.approve');
         Route::post('approvals/cash-advance/{cashAdvanceRequest}/reject', [RequestApprovalController::class, 'rejectCashAdvance'])->name('approvals.cash-advance.reject');
         Route::post('approvals/leave/{leaveRequest}/approve', [RequestApprovalController::class, 'approveLeave'])->name('approvals.leave.approve');

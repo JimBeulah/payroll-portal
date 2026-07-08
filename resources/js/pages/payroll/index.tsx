@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import type { Auth } from '@/types/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +23,9 @@ interface PayrollRun {
 const PAGE_SIZE = 10;
 
 export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const canEdit = auth.user?.role === 'admin' || auth.user?.role === 'hr';
+
     const [createOpen, setCreateOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<PayrollRun | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<PayrollRun | null>(null);
@@ -81,7 +85,7 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
             <div className="p-6 space-y-4">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold">Payroll Runs</h1>
-                    <Button onClick={openCreate}>New Payroll Run</Button>
+                    {canEdit && <Button onClick={openCreate}>New Payroll Run</Button>}
                 </div>
 
                 {/* Search & Filter */}
@@ -134,7 +138,7 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
                                         <Button variant="outline" size="sm" asChild>
                                             <Link href={`/payroll-runs/${run.id}`}>View</Link>
                                         </Button>
-                                        {run.status === 'draft' && (
+                                        {canEdit && run.status === 'draft' && (
                                             <>
                                                 <Button variant="outline" size="sm" onClick={() => openEdit(run)}>
                                                     Edit

@@ -37,7 +37,7 @@ interface UserAccount {
     name: string;
     username: string;
     email: string | null;
-    role: 'admin' | 'hr';
+    role: 'admin' | 'hr' | 'overseer';
 }
 
 type DialogMode = 'create' | 'edit' | 'delete' | null;
@@ -113,7 +113,7 @@ export default function UsersIndex({ users }: { users: UserAccount[] }) {
                     <Heading
                         variant="small"
                         title="Users"
-                        description="Manage admin and HR login accounts"
+                        description="Manage admin, HR, and overseer login accounts"
                     />
                     <Button onClick={openCreate}>Add User</Button>
                 </div>
@@ -157,7 +157,9 @@ export default function UsersIndex({ users }: { users: UserAccount[] }) {
                                             variant={
                                                 user.role === 'admin'
                                                     ? 'default'
-                                                    : 'secondary'
+                                                    : user.role === 'hr'
+                                                        ? 'secondary'
+                                                        : 'outline'
                                             }
                                             className="uppercase"
                                         >
@@ -254,7 +256,7 @@ closeDialog();
                                 onValueChange={(v) =>
                                     createForm.setData(
                                         'role',
-                                        v as 'admin' | 'hr',
+                                        v as 'admin' | 'hr' | 'overseer',
                                     )
                                 }
                             >
@@ -266,6 +268,9 @@ closeDialog();
                                         Admin
                                     </SelectItem>
                                     <SelectItem value="hr">HR</SelectItem>
+                                    <SelectItem value="overseer">
+                                        Overseer (read-only)
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                             <InputError message={createForm.errors.role} />
@@ -368,7 +373,7 @@ closeDialog();
                                 onValueChange={(v) =>
                                     editForm.setData(
                                         'role',
-                                        v as 'admin' | 'hr',
+                                        v as 'admin' | 'hr' | 'overseer',
                                     )
                                 }
                             >
@@ -380,6 +385,9 @@ closeDialog();
                                         Admin
                                     </SelectItem>
                                     <SelectItem value="hr">HR</SelectItem>
+                                    <SelectItem value="overseer">
+                                        Overseer (read-only)
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                             <InputError message={editForm.errors.role} />

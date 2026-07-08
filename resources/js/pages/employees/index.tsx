@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import type { Auth } from '@/types/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,6 +56,9 @@ function TabBar({ tab, setTab }: { tab: ModalTab; setTab: (t: ModalTab) => void 
 }
 
 export default function EmployeesIndex({ employees }: { employees: Employee[] }) {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const canEdit = auth.user?.role === 'admin' || auth.user?.role === 'hr';
+
     const [mode, setMode] = useState<DialogMode>(null);
     const [target, setTarget] = useState<Employee | null>(null);
 
@@ -157,7 +161,7 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
             <div className="p-6 space-y-4">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold">Employees</h1>
-                    <Button onClick={openCreate}>Add Employee</Button>
+                    {canEdit && <Button onClick={openCreate}>Add Employee</Button>}
                 </div>
 
                 {/* Search & Filter */}
@@ -209,8 +213,12 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                                     <TableCell>{emp.shift_start.slice(0, 5)} – {emp.shift_end.slice(0, 5)}</TableCell>
                                     <TableCell>{emp.is_active ? 'Active' : 'Inactive'}</TableCell>
                                     <TableCell className="space-x-2">
-                                        <Button variant="outline" size="sm" onClick={() => openEdit(emp)}>Edit</Button>
-                                        <Button variant="destructive" size="sm" onClick={() => openDelete(emp)}>Delete</Button>
+                                        {canEdit && (
+                                            <>
+                                                <Button variant="outline" size="sm" onClick={() => openEdit(emp)}>Edit</Button>
+                                                <Button variant="destructive" size="sm" onClick={() => openDelete(emp)}>Delete</Button>
+                                            </>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))

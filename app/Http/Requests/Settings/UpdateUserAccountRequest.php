@@ -20,7 +20,7 @@ class UpdateUserAccountRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('users', 'username')->ignore($userId)],
             'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'role' => ['required', 'in:admin,hr'],
+            'role' => ['required', 'in:admin,hr,overseer'],
             'password' => ['nullable', 'string', 'min:6'],
         ];
     }

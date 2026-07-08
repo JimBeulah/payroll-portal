@@ -38,7 +38,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        $canManage = $user && ($user->role === 'admin' || $user->role === 'hr');
+        $canManage = $user && in_array($user->role, ['admin', 'hr', 'overseer'], true);
 
         return [
             ...parent::share($request),
