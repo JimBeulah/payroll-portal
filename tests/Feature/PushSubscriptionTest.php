@@ -44,4 +44,27 @@ class PushSubscriptionTest extends TestCase
         $this->actingAs($user)->postJson('/push-subscriptions', [])
             ->assertJsonValidationErrors(['endpoint', 'keys.p256dh', 'keys.auth']);
     }
+
+    public function test_notification_settings_page_reports_no_subscription_for_user_without_one(): void
+    {
+        $user = User::factory()->employee()->create();
+
+        $this->actingAs($user)->get('/settings/notifications')
+            ->assertInertia(fn ($page) => $page->where('hasPushSubscription', false));
+    }
+
+    public function test_notification_settings_page_reports_subscription_for_user_with_one(): void
+    {
+        $user = User::factory()->employee()->create();
+
+        $user->updatePushSubscription(
+            endpoint: 'https://push.example.com/xyz789',
+            key: 'test-p256dh-key',
+            token: 'test-auth-token',
+            contentEncoding: 'aesgcm',
+        );
+
+        $this->actingAs($user)->get('/settings/notifications')
+            ->assertInertia(fn ($page) => $page->where('hasPushSubscription', true));
+    }
 }

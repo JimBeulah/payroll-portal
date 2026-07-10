@@ -67,7 +67,11 @@ class RequestApprovalController extends Controller
             'review_note' => $validated['review_note'] ?? null,
         ]);
 
-        $model->employee->user?->notify(new RequestReviewed($model));
+        try {
+            $model->employee->user?->notify(new RequestReviewed($model));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         $type = $model instanceof CashAdvanceRequest ? 'cash_advance' : 'leave';
         $decision = $status === CashAdvanceRequest::STATUS_APPROVED ? 'approved' : 'rejected';

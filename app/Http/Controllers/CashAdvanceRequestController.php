@@ -44,7 +44,11 @@ class CashAdvanceRequestController extends Controller
             'status' => CashAdvanceRequest::STATUS_PENDING,
         ]);
 
-        Notification::send(User::canApproveRequests(), new NewRequestSubmitted($cashAdvanceRequest));
+        try {
+            Notification::send(User::canApproveRequests(), new NewRequestSubmitted($cashAdvanceRequest));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return redirect()->route('my-requests.index')->with('success', 'Cash advance request submitted.');
     }

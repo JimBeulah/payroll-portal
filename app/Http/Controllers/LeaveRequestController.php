@@ -22,7 +22,11 @@ class LeaveRequestController extends Controller
             'status' => LeaveRequest::STATUS_PENDING,
         ]);
 
-        Notification::send(User::canApproveRequests(), new NewRequestSubmitted($leaveRequest));
+        try {
+            Notification::send(User::canApproveRequests(), new NewRequestSubmitted($leaveRequest));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return redirect()->route('my-requests.index')->with('success', 'Leave/absent request submitted.');
     }
