@@ -41,6 +41,11 @@ export default defineConfig({
             base: '/',
             manifestFilename: 'manifest.webmanifest',
             registerType: 'autoUpdate',
+            // Custom service worker (resources/js/sw.ts) handles push notifications;
+            // vite-plugin-pwa injects the Workbox precache manifest into it at build time.
+            strategies: 'injectManifest',
+            srcDir: 'resources/js',
+            filename: 'sw.ts',
             includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
             manifest: {
                 name: 'Payroll Portal',
@@ -58,13 +63,8 @@ export default defineConfig({
                     { src: '/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
                 ],
             },
-            workbox: {
-                // Only pre-cache/serve the built static assets (JS/CSS/fonts/images) offline.
-                // Never cache navigations or data — payroll/employee data must always come fresh
-                // from the server, and Inertia requests rely on live CSRF tokens/session state.
+            injectManifest: {
                 globPatterns: ['**/*.{js,css,woff2,png,svg}'],
-                navigateFallback: null,
-                runtimeCaching: [],
             },
         }),
     ],
