@@ -8,6 +8,7 @@ import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { index as indexAuditLogs } from '@/routes/audit-logs';
 import { edit as editCompany } from '@/routes/company';
+import { edit as editNotifications } from '@/routes/notifications';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { index as indexUsers } from '@/routes/users';
@@ -23,6 +24,11 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Security',
         href: editSecurity(),
+        icon: null,
+    },
+    {
+        title: 'Notifications',
+        href: editNotifications(),
         icon: null,
     },
     {
