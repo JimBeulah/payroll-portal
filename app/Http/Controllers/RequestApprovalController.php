@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CashAdvanceRequest;
 use App\Models\LeaveRequest;
+use App\Notifications\RequestReviewed;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -65,6 +66,8 @@ class RequestApprovalController extends Controller
             'reviewed_at' => now(),
             'review_note' => $validated['review_note'] ?? null,
         ]);
+
+        $model->employee->user?->notify(new RequestReviewed($model));
 
         $type = $model instanceof CashAdvanceRequest ? 'cash_advance' : 'leave';
         $decision = $status === CashAdvanceRequest::STATUS_APPROVED ? 'approved' : 'rejected';
