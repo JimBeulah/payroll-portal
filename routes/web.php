@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AttendanceUploadController;
 use App\Http\Controllers\CashAdvanceRequestController;
-use App\Http\Controllers\PayrollManualAttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
@@ -11,8 +10,10 @@ use App\Http\Controllers\PayrollComputeController;
 use App\Http\Controllers\PayrollEntryController;
 use App\Http\Controllers\PayrollExportController;
 use App\Http\Controllers\PayrollLockController;
+use App\Http\Controllers\PayrollManualAttendanceController;
 use App\Http\Controllers\PayrollRunController;
 use App\Http\Controllers\PayslipController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\RequestApprovalController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('my-requests', [CashAdvanceRequestController::class, 'index'])->name('my-requests.index');
     Route::post('my-requests/cash-advance', [CashAdvanceRequestController::class, 'store'])->name('my-requests.cash-advance.store');
     Route::post('my-requests/leave', [LeaveRequestController::class, 'store'])->name('my-requests.leave.store');
+
+    // --- Push notification subscriptions (any authenticated user) ---
+    Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+    Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 
     // --- Admin + HR + Overseer: read-only payroll/employee/holiday data & approvals list ---
     // Overseer can view everything below but cannot create/edit/delete/approve/compute/lock.

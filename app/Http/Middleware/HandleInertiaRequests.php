@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'vapidPublicKey' => config('webpush.vapid.public_key'),
             'pendingRequests' => $canManage ? [
                 'cashAdvance' => fn () => CashAdvanceRequest::pending()->count(),
                 'leave' => fn () => LeaveRequest::pending()->count(),
