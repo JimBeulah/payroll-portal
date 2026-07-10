@@ -21,7 +21,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export default function Notifications() {
-    const { props } = usePage<{ vapidPublicKey: string | null; hasPushSubscription: boolean }>();
+    const { props } = usePage<{ vapidPublicKey: string | null; pushSubscriptionEndpoints: string[] }>();
     const [supported, setSupported] = useState(true);
     const [subscribed, setSubscribed] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -35,8 +35,8 @@ export default function Notifications() {
 
         navigator.serviceWorker.ready
             .then((registration) => registration.pushManager.getSubscription())
-            .then((subscription) => setSubscribed(subscription !== null && props.hasPushSubscription));
-    }, [props.hasPushSubscription]);
+            .then((subscription) => setSubscribed(subscription !== null && props.pushSubscriptionEndpoints.includes(subscription.endpoint)));
+    }, [props.pushSubscriptionEndpoints]);
 
     async function enable() {
         if (!props.vapidPublicKey) {

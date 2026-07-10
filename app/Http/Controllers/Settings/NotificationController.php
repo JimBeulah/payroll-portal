@@ -15,7 +15,7 @@ class NotificationController extends Controller
     public function edit(Request $request): Response
     {
         return Inertia::render('settings/notifications', [
-            'hasPushSubscription' => $request->user()->pushSubscriptions()->exists(),
+            'pushSubscriptionEndpoints' => $request->user()->pushSubscriptions()->pluck('endpoint'),
         ]);
     }
 }

@@ -45,15 +45,15 @@ class PushSubscriptionTest extends TestCase
             ->assertJsonValidationErrors(['endpoint', 'keys.p256dh', 'keys.auth']);
     }
 
-    public function test_notification_settings_page_reports_no_subscription_for_user_without_one(): void
+    public function test_notification_settings_page_reports_no_subscription_endpoints_for_user_without_one(): void
     {
         $user = User::factory()->employee()->create();
 
         $this->actingAs($user)->get('/settings/notifications')
-            ->assertInertia(fn ($page) => $page->where('hasPushSubscription', false));
+            ->assertInertia(fn ($page) => $page->where('pushSubscriptionEndpoints', []));
     }
 
-    public function test_notification_settings_page_reports_subscription_for_user_with_one(): void
+    public function test_notification_settings_page_reports_subscription_endpoint_for_user_with_one(): void
     {
         $user = User::factory()->employee()->create();
 
@@ -65,6 +65,31 @@ class PushSubscriptionTest extends TestCase
         );
 
         $this->actingAs($user)->get('/settings/notifications')
-            ->assertInertia(fn ($page) => $page->where('hasPushSubscription', true));
+            ->assertInertia(fn ($page) => $page->where('pushSubscriptionEndpoints', ['https://push.example.com/xyz789']));
+    }
+
+    public function test_notification_settings_page_does_not_report_another_users_subscription_endpoint(): void
+    {
+        $userA = User::factory()->employee()->create();
+        $userB = User::factory()->employee()->create();
+
+        $userA->updatePushSubscription(
+            endpoint: 'https://push.example.com/user-a-endpoint',
+            key: 'test-p256dh-key',
+            token: 'test-auth-token',
+            contentEncoding: 'aesgcm',
+        );
+
+        $userB->updatePushSubscription(
+            endpoint: 'https://push.example.com/user-b-endpoint',
+            key: 'test-p256dh-key',
+            token: 'test-auth-token',
+            contentEncoding: 'aesgcm',
+        );
+
+        $this->actingAs($userB)->get('/settings/notifications')
+            ->assertInertia(fn ($page) => $page
+                ->where('pushSubscriptionEndpoints', ['https://push.example.com/user-b-endpoint'])
+            );
     }
 }
