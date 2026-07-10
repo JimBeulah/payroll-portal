@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLeaveRequest;
 use App\Models\LeaveRequest;
+use App\Models\User;
+use App\Notifications\NewRequestSubmitted;
+use Illuminate\Support\Facades\Notification;
 
 class LeaveRequestController extends Controller
 {
@@ -11,13 +14,15 @@ class LeaveRequestController extends Controller
     {
         $employee = $request->user()->employee;
 
-        LeaveRequest::create([
+        $leaveRequest = LeaveRequest::create([
             'employee_id' => $employee->id,
             'start_date' => $request->validated('start_date'),
             'end_date' => $request->validated('end_date'),
             'reason' => $request->validated('reason'),
             'status' => LeaveRequest::STATUS_PENDING,
         ]);
+
+        Notification::send(User::canApproveRequests(), new NewRequestSubmitted($leaveRequest));
 
         return redirect()->route('my-requests.index')->with('success', 'Leave/absent request submitted.');
     }

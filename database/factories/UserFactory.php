@@ -61,6 +61,11 @@ class UserFactory extends Factory
         return $this->role(User::ROLE_EMPLOYEE);
     }
 
+    public function overseer(): static
+    {
+        return $this->role(User::ROLE_OVERSEER);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */

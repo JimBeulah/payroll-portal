@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -71,6 +72,16 @@ class User extends Authenticatable implements PasskeyUser
     public function isOverseer(): bool
     {
         return $this->role === self::ROLE_OVERSEER;
+    }
+
+    /**
+     * Users who can view and act on cash advance/leave requests.
+     *
+     * @return Collection<int, self>
+     */
+    public static function canApproveRequests(): Collection
+    {
+        return static::whereIn('role', [self::ROLE_ADMIN, self::ROLE_HR, self::ROLE_OVERSEER])->get();
     }
 
     /**

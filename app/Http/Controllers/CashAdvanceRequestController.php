@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCashAdvanceRequest;
 use App\Models\CashAdvanceRequest;
 use App\Models\LeaveRequest;
+use App\Models\User;
+use App\Notifications\NewRequestSubmitted;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 
 class CashAdvanceRequestController extends Controller
@@ -33,13 +36,15 @@ class CashAdvanceRequestController extends Controller
     {
         $employee = $request->user()->employee;
 
-        CashAdvanceRequest::create([
+        $cashAdvanceRequest = CashAdvanceRequest::create([
             'employee_id' => $employee->id,
             'amount' => $request->validated('amount'),
             'needed_date' => $request->validated('needed_date'),
             'reason' => $request->validated('reason'),
             'status' => CashAdvanceRequest::STATUS_PENDING,
         ]);
+
+        Notification::send(User::canApproveRequests(), new NewRequestSubmitted($cashAdvanceRequest));
 
         return redirect()->route('my-requests.index')->with('success', 'Cash advance request submitted.');
     }
