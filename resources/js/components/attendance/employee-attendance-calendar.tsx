@@ -167,12 +167,186 @@ export default function EmployeeAttendanceCalendar({
         );
     }
 
+    function dayInfoFor(dateStr: string | null) {
+        const attendance = dateStr ? (attendanceByDate[dateStr] ?? null) : null;
+        const excelDay = dateStr ? (attendanceData[dateStr] ?? null) : null;
+        const leaveDay = dateStr ? (leaveData[dateStr] ?? null) : null;
+        const holiday = dateStr ? (holidaysByDate[dateStr] ?? null) : null;
+
+        return { attendance, excelDay, leaveDay, holiday };
+    }
+
+    function renderDayBody(dateStr: string) {
+        const { attendance, excelDay, leaveDay, holiday } = dayInfoFor(dateStr);
+
+        return (
+            <>
+                {holiday && !leaveDay && (
+                    <div className="text-[11px] space-y-0.5">
+                        <div className="text-[9px] text-violet-600 dark:text-violet-400 font-bold uppercase leading-none">Holiday</div>
+                        <div className="text-muted-foreground" title={holiday.name}>
+                            {holiday.name}
+                        </div>
+                    </div>
+                )}
+
+                {leaveDay && (
+                    <div className="text-[11px] space-y-0.5">
+                        <div className="text-[9px] text-sky-600 dark:text-sky-400 font-bold uppercase leading-none">Leave (Unpaid)</div>
+                        {leaveDay.reason && (
+                            <div className="text-muted-foreground" title={leaveDay.reason}>
+                                {leaveDay.reason}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {excelDay && !attendance && !leaveDay && !holiday && (
+                    <div className="text-[11px] space-y-0.5">
+                        <div className="flex items-center gap-1">
+                            <span className="text-[9px] uppercase text-muted-foreground font-semibold shrink-0">T</span>
+                            <span className="text-foreground/90 font-medium">
+                                {to12hr(excelDay.sw)}–{to12hr(excelDay.ew)}
+                            </span>
+                        </div>
+                        {excelDay.late_minutes > 0 && <div className="text-amber-500 font-medium">Late: {fmtMinutes(excelDay.late_minutes)}</div>}
+                        {excelDay.undertime_minutes > 0 && (
+                            <div className="text-orange-500 font-medium">UT: {fmtMinutes(excelDay.undertime_minutes)}</div>
+                        )}
+                        {excelDay.overtime_minutes > 0 && (
+                            <div className="text-green-500 font-medium">OT: {fmtMinutes(excelDay.overtime_minutes)}</div>
+                        )}
+                    </div>
+                )}
+
+                {attendance &&
+                    !leaveDay &&
+                    !holiday &&
+                    (() => {
+                        const stats =
+                            attendance.sw && attendance.ew
+                                ? computeDayStats(attendance.sw, attendance.ew, attendance.shift_start, attendance.shift_end)
+                                : null;
+                        return (
+                            <div className="text-[11px] font-medium space-y-0.5">
+                                <div className="flex items-center gap-1">
+                                    <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">S</span>
+                                    <span className="text-primary">
+                                        {to12hr(attendance.shift_start)}–{to12hr(attendance.shift_end)}
+                                    </span>
+                                </div>
+                                {(attendance.sw || attendance.ew) && (
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">T</span>
+                                        <span className="text-muted-foreground">
+                                            {attendance.sw ? to12hr(attendance.sw) : '?'}–{attendance.ew ? to12hr(attendance.ew) : '?'}
+                                        </span>
+                                    </div>
+                                )}
+                                {stats && stats.late_minutes > 0 && <div className="text-amber-500">Late: {fmtMinutes(stats.late_minutes)}</div>}
+                                {stats && stats.undertime_minutes > 0 && (
+                                    <div className="text-orange-500">UT: {fmtMinutes(stats.undertime_minutes)}</div>
+                                )}
+                                {stats && stats.overtime_minutes > 0 && (
+                                    <div className="text-green-500">OT: {fmtMinutes(stats.overtime_minutes)}</div>
+                                )}
+                            </div>
+                        );
+                    })()}
+
+                {!holiday && !leaveDay && !attendance && !excelDay && <div className="text-[11px] text-muted-foreground">No record</div>}
+            </>
+        );
+    }
+
+    /** Single-line summary used by the mobile agenda list — everything visible without tapping. */
+    function renderAgendaLine(dateStr: string) {
+        const { attendance, excelDay, leaveDay, holiday } = dayInfoFor(dateStr);
+
+        if (leaveDay) {
+            return (
+                <div className="text-sky-600 dark:text-sky-400 font-medium">
+                    Leave (Unpaid){leaveDay.reason ? ` — ${leaveDay.reason}` : ''}
+                </div>
+            );
+        }
+
+        if (holiday) {
+            return <div className="text-violet-600 dark:text-violet-400 font-medium">Holiday — {holiday.name}</div>;
+        }
+
+        if (attendance) {
+            const stats =
+                attendance.sw && attendance.ew
+                    ? computeDayStats(attendance.sw, attendance.ew, attendance.shift_start, attendance.shift_end)
+                    : null;
+            const sw = attendance.sw ? to12hr(attendance.sw) : null;
+            const ew = attendance.ew ? to12hr(attendance.ew) : null;
+
+            return (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span className="font-medium">
+                        {sw && ew ? `${sw}–${ew}` : `Shift ${to12hr(attendance.shift_start)}–${to12hr(attendance.shift_end)}`}
+                    </span>
+                    {stats && stats.late_minutes > 0 && <span className="text-amber-500">Late {fmtMinutes(stats.late_minutes)}</span>}
+                    {stats && stats.undertime_minutes > 0 && <span className="text-orange-500">UT {fmtMinutes(stats.undertime_minutes)}</span>}
+                    {stats && stats.overtime_minutes > 0 && <span className="text-green-500">OT {fmtMinutes(stats.overtime_minutes)}</span>}
+                </div>
+            );
+        }
+
+        if (excelDay) {
+            return (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span className="font-medium">
+                        {to12hr(excelDay.sw)}–{to12hr(excelDay.ew)}
+                    </span>
+                    {excelDay.late_minutes > 0 && <span className="text-amber-500">Late {fmtMinutes(excelDay.late_minutes)}</span>}
+                    {excelDay.undertime_minutes > 0 && <span className="text-orange-500">UT {fmtMinutes(excelDay.undertime_minutes)}</span>}
+                    {excelDay.overtime_minutes > 0 && <span className="text-green-500">OT {fmtMinutes(excelDay.overtime_minutes)}</span>}
+                </div>
+            );
+        }
+
+        return <div className="text-muted-foreground">No record</div>;
+    }
+
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const monthName = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
+    const daysInPeriod = dateArray.filter((date): date is Date => date !== null && isInPeriod(date));
+
     return (
         <div className="space-y-4">
-            <div className="border rounded-lg p-4">
+            {/* Agenda list — mobile: every day's attendance visible at a glance, no tapping. */}
+            <div className="sm:hidden border rounded-lg divide-y">
+                <div className="px-4 py-3 font-semibold text-center border-b">{monthName}</div>
+                {daysInPeriod.map((date) => {
+                    const dateStr = formatDateString(date);
+                    const today = isToday(date);
+                    const { holiday, leaveDay } = dayInfoFor(dateStr);
+
+                    return (
+                        <div
+                            key={dateStr}
+                            className={`flex items-start gap-3 px-4 py-2.5 text-sm ${
+                                leaveDay ? 'bg-sky-500/5' : holiday ? 'bg-violet-500/5' : ''
+                            } ${today ? 'ring-1 ring-inset ring-amber-500' : ''}`}
+                        >
+                            <div className="w-12 shrink-0 text-center">
+                                <div className="text-[10px] uppercase text-muted-foreground leading-none">
+                                    {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                                </div>
+                                <div className="text-lg font-semibold leading-tight">{date.getDate()}</div>
+                            </div>
+                            <div className="flex-1 min-w-0 pt-0.5">{renderAgendaLine(dateStr)}</div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Month grid — tablet/desktop: full detail per cell. */}
+            <div className="hidden sm:block border rounded-lg p-4">
                 <h3 className="font-semibold mb-4 text-center">{monthName}</h3>
 
                 <div className="grid grid-cols-7 gap-2 mb-2">
@@ -186,10 +360,7 @@ export default function EmployeeAttendanceCalendar({
                 <div className="grid grid-cols-7 gap-2">
                     {dateArray.map((date, idx) => {
                         const dateStr = date ? formatDateString(date) : null;
-                        const attendance = dateStr ? attendanceByDate[dateStr] : null;
-                        const excelDay = dateStr ? (attendanceData[dateStr] ?? null) : null;
-                        const leaveDay = dateStr ? (leaveData[dateStr] ?? null) : null;
-                        const holiday = dateStr ? (holidaysByDate[dateStr] ?? null) : null;
+                        const { attendance, excelDay, leaveDay, holiday } = dayInfoFor(dateStr);
                         const inPeriod = date ? isInPeriod(date) : false;
                         const today = date ? isToday(date) : false;
 
@@ -215,88 +386,7 @@ export default function EmployeeAttendanceCalendar({
                                 `}
                             >
                                 <div className="text-sm font-semibold mb-1 leading-none">{date && date.getDate()}</div>
-
-                                {holiday && !leaveDay && (
-                                    <div className="text-[11px] space-y-0.5">
-                                        <div className="text-[9px] text-violet-600 dark:text-violet-400 font-bold uppercase leading-none">
-                                            Holiday
-                                        </div>
-                                        <div className="text-muted-foreground truncate" title={holiday.name}>
-                                            {holiday.name}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {leaveDay && (
-                                    <div className="text-[11px] space-y-0.5">
-                                        <div className="text-[9px] text-sky-600 dark:text-sky-400 font-bold uppercase leading-none">
-                                            Leave (Unpaid)
-                                        </div>
-                                        {leaveDay.reason && (
-                                            <div className="text-muted-foreground truncate" title={leaveDay.reason}>
-                                                {leaveDay.reason}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {excelDay && !attendance && !leaveDay && !holiday && (
-                                    <div className="text-[11px] space-y-0.5">
-                                        <div className="flex items-center gap-1">
-                                            <span className="text-[9px] uppercase text-muted-foreground font-semibold shrink-0">T</span>
-                                            <span className="text-foreground/90 font-medium">
-                                                {to12hr(excelDay.sw)}–{to12hr(excelDay.ew)}
-                                            </span>
-                                        </div>
-                                        {excelDay.late_minutes > 0 && (
-                                            <div className="text-amber-500 font-medium">Late: {fmtMinutes(excelDay.late_minutes)}</div>
-                                        )}
-                                        {excelDay.undertime_minutes > 0 && (
-                                            <div className="text-orange-500 font-medium">UT: {fmtMinutes(excelDay.undertime_minutes)}</div>
-                                        )}
-                                        {excelDay.overtime_minutes > 0 && (
-                                            <div className="text-green-500 font-medium">OT: {fmtMinutes(excelDay.overtime_minutes)}</div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {attendance && !leaveDay && !holiday && (() => {
-                                    const stats =
-                                        attendance.sw && attendance.ew
-                                            ? computeDayStats(attendance.sw, attendance.ew, attendance.shift_start, attendance.shift_end)
-                                            : null;
-                                    return (
-                                        <div className="text-[11px] font-medium space-y-0.5">
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">
-                                                    S
-                                                </span>
-                                                <span className="text-primary">
-                                                    {to12hr(attendance.shift_start)}–{to12hr(attendance.shift_end)}
-                                                </span>
-                                            </div>
-                                            {(attendance.sw || attendance.ew) && (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">
-                                                        T
-                                                    </span>
-                                                    <span className="text-muted-foreground">
-                                                        {attendance.sw ? to12hr(attendance.sw) : '?'}–{attendance.ew ? to12hr(attendance.ew) : '?'}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {stats && stats.late_minutes > 0 && (
-                                                <div className="text-amber-500">Late: {fmtMinutes(stats.late_minutes)}</div>
-                                            )}
-                                            {stats && stats.undertime_minutes > 0 && (
-                                                <div className="text-orange-500">UT: {fmtMinutes(stats.undertime_minutes)}</div>
-                                            )}
-                                            {stats && stats.overtime_minutes > 0 && (
-                                                <div className="text-green-500">OT: {fmtMinutes(stats.overtime_minutes)}</div>
-                                            )}
-                                        </div>
-                                    );
-                                })()}
+                                <div className="space-y-0.5">{dateStr && renderDayBody(dateStr)}</div>
                             </div>
                         );
                     })}
