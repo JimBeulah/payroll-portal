@@ -25,94 +25,100 @@ class AttendanceCalendarService
         $attendanceData = [];
         $upload = $payrollRun->uploads()->latest()->first();
 
-        if ($upload && $upload->storage_path) {
-            $fullPath = Storage::path($upload->storage_path);
+        if ($upload && $upload->storage_path && Storage::exists($upload->storage_path)) {
+            // Copy to a local temp file so PhpSpreadsheet can read it regardless of which
+            // disk (local or a cloud/S3-compatible one) actually holds the uploaded file.
+            $tmpPath = tempnam(sys_get_temp_dir(), 'attendance_').'.'.pathinfo($upload->storage_path, PATHINFO_EXTENSION);
 
-            if (file_exists($fullPath)) {
-                try {
-                    $parsed = (new AttendanceParser)->parse($fullPath);
+            try {
+                file_put_contents($tmpPath, Storage::get($upload->storage_path));
 
-                    foreach ($parsed as $row) {
-                        $emp = Employee::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($row['name']))])
-                            ->whereRaw('LOWER(TRIM(department)) = ?', [strtolower(trim($row['department']))])
-                            ->first();
+                $parsed = (new AttendanceParser)->parse($tmpPath);
 
-                        if (! $emp) {
+                foreach ($parsed as $row) {
+                    $emp = Employee::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($row['name']))])
+                        ->whereRaw('LOWER(TRIM(department)) = ?', [strtolower(trim($row['department']))])
+                        ->first();
+
+                    if (! $emp) {
+                        continue;
+                    }
+
+                    $shiftStart = substr($emp->shift_start, 0, 5);
+                    $shiftEnd = substr($emp->shift_end, 0, 5);
+                    $days = [];
+
+                    foreach ($row['attendance'] as $date => $times) {
+                        if ($date < $periodStart || $date > $periodEnd) {
+                            continue;
+                        }
+                        if (empty($times['sw']) || empty($times['ew'])) {
                             continue;
                         }
 
-                        $shiftStart = substr($emp->shift_start, 0, 5);
-                        $shiftEnd = substr($emp->shift_end, 0, 5);
-                        $days = [];
+                        $lateMin = 0;
+                        $utMin = 0;
+                        $otMin = 0;
 
-                        foreach ($row['attendance'] as $date => $times) {
-                            if ($date < $periodStart || $date > $periodEnd) {
-                                continue;
+                        try {
+                            $sStart = Carbon::createFromFormat('Y-m-d H:i', "$date $shiftStart");
+                            $sEnd = Carbon::createFromFormat('Y-m-d H:i', "$date $shiftEnd");
+                            $aStart = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['sw']}");
+                            $aEnd = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['ew']}");
+
+                            if ($sEnd->lte($sStart)) {
+                                $sEnd->addDay();
                             }
-                            if (empty($times['sw']) || empty($times['ew'])) {
-                                continue;
-                            }
-
-                            $lateMin = 0;
-                            $utMin = 0;
-                            $otMin = 0;
-
-                            try {
-                                $sStart = Carbon::createFromFormat('Y-m-d H:i', "$date $shiftStart");
-                                $sEnd = Carbon::createFromFormat('Y-m-d H:i', "$date $shiftEnd");
-                                $aStart = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['sw']}");
-                                $aEnd = Carbon::createFromFormat('Y-m-d H:i', "$date {$times['ew']}");
-
-                                if ($sEnd->lte($sStart)) {
-                                    $sEnd->addDay();
-                                }
-                                if ($aEnd->lte($aStart)) {
-                                    $aEnd->addDay();
-                                }
-
-                                $shiftMins = (int) $sStart->diffInMinutes($sEnd);
-                                $breakMins = max(0, $shiftMins - 480);
-                                $bStart = $sStart->copy()->addMinutes(240);
-                                $bEnd = $bStart->copy()->addMinutes($breakMins);
-
-                                if ($aStart->gt($sStart)) {
-                                    $raw = (int) $sStart->diffInMinutes($aStart);
-                                    if ($breakMins > 0 && $aStart->gt($bStart)) {
-                                        $oe = $aStart->lte($bEnd) ? $aStart : $bEnd;
-                                        $raw -= (int) $bStart->diffInMinutes($oe);
-                                    }
-                                    $lateMin = max(0, $raw);
-                                }
-
-                                if ($aEnd->lt($sEnd)) {
-                                    $raw = (int) $aEnd->diffInMinutes($sEnd);
-                                    if ($breakMins > 0 && $aEnd->lt($bEnd)) {
-                                        $os = $aEnd->gte($bStart) ? $aEnd : $bStart;
-                                        $raw -= (int) $os->diffInMinutes($bEnd);
-                                    }
-                                    $utMin = max(0, $raw);
-                                }
-
-                                if ($aEnd->gt($sEnd)) {
-                                    $otMin = abs((int) $aEnd->diffInMinutes($sEnd));
-                                }
-                            } catch (\Exception) {
-                                // Skip computation on malformed time value
+                            if ($aEnd->lte($aStart)) {
+                                $aEnd->addDay();
                             }
 
-                            $days[$date] = [
-                                'sw' => $times['sw'],
-                                'ew' => $times['ew'],
-                                'late_minutes' => $lateMin,
-                                'undertime_minutes' => $utMin,
-                                'overtime_minutes' => $otMin,
-                            ];
+                            $shiftMins = (int) $sStart->diffInMinutes($sEnd);
+                            $breakMins = max(0, $shiftMins - 480);
+                            $bStart = $sStart->copy()->addMinutes(240);
+                            $bEnd = $bStart->copy()->addMinutes($breakMins);
+
+                            if ($aStart->gt($sStart)) {
+                                $raw = (int) $sStart->diffInMinutes($aStart);
+                                if ($breakMins > 0 && $aStart->gt($bStart)) {
+                                    $oe = $aStart->lte($bEnd) ? $aStart : $bEnd;
+                                    $raw -= (int) $bStart->diffInMinutes($oe);
+                                }
+                                $lateMin = max(0, $raw);
+                            }
+
+                            if ($aEnd->lt($sEnd)) {
+                                $raw = (int) $aEnd->diffInMinutes($sEnd);
+                                if ($breakMins > 0 && $aEnd->lt($bEnd)) {
+                                    $os = $aEnd->gte($bStart) ? $aEnd : $bStart;
+                                    $raw -= (int) $os->diffInMinutes($bEnd);
+                                }
+                                $utMin = max(0, $raw);
+                            }
+
+                            if ($aEnd->gt($sEnd)) {
+                                $otMin = abs((int) $aEnd->diffInMinutes($sEnd));
+                            }
+                        } catch (\Exception) {
+                            // Skip computation on malformed time value
                         }
 
-                        $attendanceData[$emp->id] = $days;
+                        $days[$date] = [
+                            'sw' => $times['sw'],
+                            'ew' => $times['ew'],
+                            'late_minutes' => $lateMin,
+                            'undertime_minutes' => $utMin,
+                            'overtime_minutes' => $otMin,
+                        ];
                     }
-                } catch (\Exception) {
-                    // If the file can't be parsed, just return empty — don't block the page
+
+                    $attendanceData[$emp->id] = $days;
+                }
+            } catch (\Exception) {
+                // If the file can't be read/parsed, just return empty — don't block the page
+            } finally {
+                if (file_exists($tmpPath)) {
+                    @unlink($tmpPath);
                 }
             }
         }

@@ -9,6 +9,9 @@ use App\Models\PayrollManualAttendance;
 use App\Models\PayrollRun;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
 
 class EmployeeAttendanceSmokeTest extends TestCase
@@ -72,5 +75,63 @@ class EmployeeAttendanceSmokeTest extends TestCase
         $otherRun = PayrollRun::factory()->create(['period_start' => '2026-05-01', 'period_end' => '2026-05-15']);
 
         $this->actingAs($user)->get('/my-attendance?run='.$otherRun->id)->assertNotFound();
+    }
+
+    public function test_employee_sees_attendance_parsed_from_the_uploaded_excel_file(): void
+    {
+        $employee = Employee::factory()->create([
+            'name' => 'DELA CRUZ, JUAN',
+            'department' => 'ADMIN',
+            'shift_start' => '08:00:00',
+            'shift_end' => '17:00:00',
+        ]);
+        $user = User::factory()->create(['role' => 'employee']);
+        $employee->update(['user_id' => $user->id]);
+
+        $admin = User::factory()->admin()->create();
+        $run = PayrollRun::factory()->create([
+            'created_by' => $admin->id,
+            'period_start' => '2026-05-01',
+            'period_end' => '2026-05-15',
+        ]);
+        PayrollEntry::factory()->create(['payroll_run_id' => $run->id, 'employee_id' => $employee->id]);
+
+        $this->actingAs($admin)
+            ->post("/payroll-runs/{$run->id}/upload", ['file' => $this->buildAttendanceFile('DELA CRUZ, JUAN', 'ADMIN')])
+            ->assertRedirect();
+
+        // This is the crux of the storage fix: the file is read back via Storage::get()
+        // (disk-agnostic) into a temp file for parsing, not assumed to be on local disk already.
+        $response = $this->actingAs($user)->get('/my-attendance');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('attendance/index')
+            ->where('attendanceData.2026-05-01.sw', '08:00')
+            ->where('attendanceData.2026-05-01.ew', '17:00')
+        );
+    }
+
+    private function buildAttendanceFile(string $name, string $dept): UploadedFile
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setCellValue('A3', 'Create Time:2026-05-01');
+        $sheet->setCellValue('A4', 'Employee ID');
+        $sheet->setCellValue('C4', 'Name');
+        $sheet->setCellValue('D4', 'Department');
+        $sheet->setCellValue('E4', '2026/05/01');
+        $sheet->mergeCells('E4:F4');
+        $sheet->setCellValue('E5', 'SW');
+        $sheet->setCellValue('F5', 'EW');
+        $sheet->setCellValue('A6', '1');
+        $sheet->setCellValue('C6', $name);
+        $sheet->setCellValue('D6', $dept);
+        $sheet->setCellValue('E6', '08:00 17:00');
+
+        $path = sys_get_temp_dir().'/employee_attendance_test_upload.xlsx';
+        (new Xlsx($spreadsheet))->save($path);
+
+        return new UploadedFile($path, 'attendance.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
     }
 }
