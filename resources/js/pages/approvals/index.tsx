@@ -96,6 +96,17 @@ export default function ApprovalsIndex({
 
     const [target, setTarget] = useState<ReviewTarget | null>(null);
     const form = useForm({ review_note: '' });
+    const undoForm = useForm({});
+
+    function undoReview(kind: RequestKind, id: number) {
+        if (!window.confirm('Reject this request?')) {
+            return;
+        }
+
+        undoForm.post(`/approvals/${kind}/${id}/reject`, {
+            preserveScroll: true,
+        });
+    }
 
     const pendingCashAdvances = cashAdvances.filter(
         (r) => r.status === 'pending',
@@ -246,13 +257,26 @@ return;
                                                         </Button>
                                                     </>
                                                 ) : (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {r.reviewer
-                                                            ? `by ${r.reviewer.name}`
-                                                            : r.status === 'pending'
-                                                                ? 'Pending'
-                                                                : 'Reviewed'}
-                                                    </span>
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {r.reviewer
+                                                                ? `by ${r.reviewer.name}`
+                                                                : r.status === 'pending'
+                                                                    ? 'Pending'
+                                                                    : 'Reviewed'}
+                                                        </span>
+                                                        {canEdit && r.status === 'approved' && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    undoReview('cash-advance', r.id)
+                                                                }
+                                                            >
+                                                                Undo (Reject)
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </TableCell>
                                         </TableRow>
@@ -342,13 +366,26 @@ return;
                                                         </Button>
                                                     </>
                                                 ) : (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {r.reviewer
-                                                            ? `by ${r.reviewer.name}`
-                                                            : r.status === 'pending'
-                                                                ? 'Pending'
-                                                                : 'Reviewed'}
-                                                    </span>
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {r.reviewer
+                                                                ? `by ${r.reviewer.name}`
+                                                                : r.status === 'pending'
+                                                                    ? 'Pending'
+                                                                    : 'Reviewed'}
+                                                        </span>
+                                                        {canEdit && r.status === 'approved' && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    undoReview('leave', r.id)
+                                                                }
+                                                            >
+                                                                Undo (Reject)
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </TableCell>
                                         </TableRow>

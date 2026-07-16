@@ -139,16 +139,12 @@ class PayrollComputeController extends Controller
         }
         unset($data);
 
-        // --- Step 3: Approved cash advances for this period, per employee ---
-        // Sum approved advances whose needed_date falls in the run period and that have not
-        // already been locked into a different run. Idempotent across recomputes because
-        // advances are separate records (never wiped/rewritten on the entry itself).
-        $cashAdvanceByEmployee = CashAdvanceRequest::approved()
-            ->whereBetween('needed_date', [$periodStart, $periodEnd])
-            ->where(function ($q) use ($payrollRun) {
-                $q->whereNull('applied_payroll_run_id')
-                    ->orWhere('applied_payroll_run_id', $payrollRun->id);
-            })
+        // --- Step 3: Approved cash advances due on this run's payday, per employee ---
+        // Sum advances whose needed_date is on or before this run's payable_date, where
+        // this is the soonest still-open run that can cover them. Idempotent across
+        // recomputes because advances are separate records (never wiped/rewritten on
+        // the entry itself).
+        $cashAdvanceByEmployee = CashAdvanceRequest::dueForPayrollRun($payrollRun)
             ->selectRaw('employee_id, SUM(amount) as total')
             ->groupBy('employee_id')
             ->pluck('total', 'employee_id');

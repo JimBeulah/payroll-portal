@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttendanceUploadController;
 use App\Http\Controllers\CashAdvanceRequestController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeAttendanceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveRequestController;
@@ -28,6 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('my-requests', [CashAdvanceRequestController::class, 'index'])->name('my-requests.index');
     Route::post('my-requests/cash-advance', [CashAdvanceRequestController::class, 'store'])->name('my-requests.cash-advance.store');
     Route::post('my-requests/leave', [LeaveRequestController::class, 'store'])->name('my-requests.leave.store');
+    Route::get('my-attendance', [EmployeeAttendanceController::class, 'index'])->name('my-attendance.index');
 
     // --- Push notification subscriptions (any authenticated user) ---
     Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');

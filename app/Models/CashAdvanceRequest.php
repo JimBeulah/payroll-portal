@@ -52,4 +52,29 @@ class CashAdvanceRequest extends Model
     {
         return $query->where('status', self::STATUS_APPROVED);
     }
+
+    /**
+     * Advances due on a given payroll run: approved, payable in time (needed_date
+     * on or before this run's payable_date), not already claimed by another run,
+     * and with no earlier still-open run that could also cover them — so an
+     * advance is always swept into the soonest payday that can pay it back,
+     * never a later one.
+     */
+    public function scopeDueForPayrollRun(Builder $query, PayrollRun $payrollRun): Builder
+    {
+        return $query->approved()
+            ->where('needed_date', '<=', $payrollRun->payable_date)
+            ->where(function (Builder $q) use ($payrollRun) {
+                $q->whereNull('applied_payroll_run_id')
+                    ->orWhere('applied_payroll_run_id', $payrollRun->id);
+            })
+            ->whereNotExists(function ($q) use ($payrollRun) {
+                $q->selectRaw(1)
+                    ->from('payroll_runs as earlier_runs')
+                    ->where('earlier_runs.status', '!=', 'locked')
+                    ->where('earlier_runs.id', '!=', $payrollRun->id)
+                    ->where('earlier_runs.payable_date', '<', $payrollRun->payable_date)
+                    ->whereColumn('earlier_runs.payable_date', '>=', 'cash_advance_requests.needed_date');
+            });
+    }
 }

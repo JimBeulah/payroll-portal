@@ -14,13 +14,9 @@ class PayrollLockController extends Controller
 
         $payrollRun->update(['status' => 'locked']);
 
-        // Stamp the approved advances that fell into this run so a later run cannot
-        // double-count them. Only claim advances not already tied to another run.
-        CashAdvanceRequest::approved()
-            ->whereBetween('needed_date', [
-                $payrollRun->period_start->format('Y-m-d'),
-                $payrollRun->period_end->format('Y-m-d'),
-            ])
+        // Stamp the advances that fell into this run so a later run cannot double-count
+        // them. Only claim advances not already tied to another run.
+        CashAdvanceRequest::dueForPayrollRun($payrollRun)
             ->whereNull('applied_payroll_run_id')
             ->update(['applied_payroll_run_id' => $payrollRun->id]);
 

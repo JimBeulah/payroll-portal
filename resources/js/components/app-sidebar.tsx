@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Banknote, CalendarDays, ClipboardList, FileText, LayoutGrid, Users } from 'lucide-react';
+import { Banknote, CalendarCheck, CalendarDays, ClipboardList, FileText, LayoutGrid, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -50,6 +50,11 @@ const employeeNavItems: NavItem[] = [
         title: 'My Requests',
         href: '/my-requests',
         icon: FileText,
+    },
+    {
+        title: 'My Attendance',
+        href: '/my-attendance',
+        icon: CalendarCheck,
     },
 ];
 
