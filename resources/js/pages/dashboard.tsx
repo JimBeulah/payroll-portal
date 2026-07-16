@@ -1,5 +1,15 @@
 import { Head, Link } from '@inertiajs/react';
 import {
+    Users,
+    UserCheck,
+    UserX,
+    Wallet,
+    ClipboardList,
+    Lock,
+    TrendingUp,
+    ArrowRight,
+} from 'lucide-react';
+import {
     BarChart,
     Bar,
     XAxis,
@@ -12,19 +22,9 @@ import {
     Cell,
     Legend,
 } from 'recharts';
-import {
-    Users,
-    UserCheck,
-    UserX,
-    Wallet,
-    ClipboardList,
-    Lock,
-    TrendingUp,
-    ArrowRight,
-} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { dashboard } from '@/routes';
 import { formatDate } from '@/lib/utils';
+import { dashboard } from '@/routes';
 
 interface Stats {
     total_employees: number;
@@ -88,8 +88,14 @@ function fmt(value: number) {
 }
 
 function fmtShort(value: number) {
-    if (value >= 1_000_000) return `₱${(value / 1_000_000).toFixed(1)}M`;
-    if (value >= 1_000) return `₱${(value / 1_000).toFixed(1)}K`;
+    if (value >= 1_000_000) {
+return `₱${(value / 1_000_000).toFixed(1)}M`;
+}
+
+    if (value >= 1_000) {
+return `₱${(value / 1_000).toFixed(1)}K`;
+}
+
     return `₱${value}`;
 }
 
@@ -123,9 +129,12 @@ function KpiCard({ title, value, sub, icon, iconClass, trend }: KpiCardProps) {
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function CustomBarTooltip({ active, payload, label }: any) {
-    if (!active || !payload?.length) return null;
+    if (!active || !payload?.length) {
+return null;
+}
+
     return (
         <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-lg text-sm">
             <p className="font-semibold text-foreground mb-1">{label}</p>
@@ -336,6 +345,7 @@ export default function Dashboard({ stats, payrollTrend, departmentStats, recent
                                 {topEarners.map((earner, i) => {
                                     const max = topEarners[0]?.net_pay ?? 1;
                                     const pct = Math.round((earner.net_pay / max) * 100);
+
                                     return (
                                         <div key={i} className="space-y-1">
                                             <div className="flex items-center justify-between">

@@ -1,10 +1,10 @@
 import { useForm } from '@inertiajs/react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import InputError from '@/components/input-error';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
 export interface AvailableEmployee {
     id: number;
@@ -34,7 +34,9 @@ export default function AddEmployeeSheet({ open, onClose, payrollRunId, employee
     function submit(e: React.FormEvent) {
         e.preventDefault();
         post(`/payroll-runs/${payrollRunId}/entries`, {
-            onSuccess: () => { reset(); onClose(); },
+            onSuccess: () => {
+ reset(); onClose(); 
+},
         });
     }
 
@@ -44,7 +46,11 @@ export default function AddEmployeeSheet({ open, onClose, payrollRunId, employee
     }
 
     return (
-        <Sheet open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
+        <Sheet open={open} onOpenChange={(o) => {
+ if (!o) {
+handleClose();
+} 
+}}>
             <SheetContent className="flex flex-col gap-0 p-0 sm:max-w-md">
                 <SheetHeader className="px-6 pt-6 pb-4">
                     <SheetTitle className="text-lg">Add Employee</SheetTitle>

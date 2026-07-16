@@ -14,8 +14,14 @@ export function useFlashToast(): void {
         const offNavigate = router.on('navigate', (event) => {
             const flash = (event as any).detail?.page?.props?.flash as PageFlash | undefined;
 
-            if (flash?.success) toast.success(flash.success);
-            if (flash?.error) toast.error(flash.error);
+            if (flash?.success) {
+toast.success(flash.success);
+}
+
+            if (flash?.error) {
+toast.error(flash.error);
+}
+
             if (flash?.unmatched?.length) {
                 toast.warning(`${flash.unmatched.length} employee(s) could not be matched`, {
                     description: flash.unmatched.join(', '),
@@ -26,7 +32,11 @@ export function useFlashToast(): void {
         const offFlash = router.on('flash', (event) => {
             const flashData = (event as CustomEvent).detail?.flash;
             const data = flashData?.toast as FlashToast | undefined;
-            if (!data) return;
+
+            if (!data) {
+return;
+}
+
             toast[data.type](data.message);
         });
 

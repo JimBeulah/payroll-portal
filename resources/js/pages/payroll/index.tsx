@@ -1,16 +1,16 @@
-import { useState, useMemo } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import type { Auth } from '@/types/auth';
+import { useState, useMemo } from 'react';
+import InputError from '@/components/input-error';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import InputError from '@/components/input-error';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { index } from '@/routes/payroll-runs';
 import { formatDate } from '@/lib/utils';
+import { index } from '@/routes/payroll-runs';
+import type { Auth } from '@/types/auth';
 
 interface PayrollRun {
     id: number;
@@ -39,6 +39,7 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
+
         return runs.filter(run => {
             const matchesSearch =
                 !q ||
@@ -46,6 +47,7 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
                 run.period_end.includes(q) ||
                 run.payable_date.includes(q);
             const matchesStatus = statusFilter === 'all' || run.status === statusFilter;
+
             return matchesSearch && matchesStatus;
         });
     }, [runs, search, statusFilter]);
@@ -93,10 +95,14 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
                     <Input
                         placeholder="Search by date…"
                         value={search}
-                        onChange={e => { setSearch(e.target.value); setPage(1); }}
+                        onChange={e => {
+ setSearch(e.target.value); setPage(1); 
+}}
                         className="max-w-sm"
                     />
-                    <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
+                    <Select value={statusFilter} onValueChange={v => {
+ setStatusFilter(v); setPage(1); 
+}}>
                         <SelectTrigger className="w-40">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
@@ -174,7 +180,11 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
             </div>
 
             {/* Create Dialog */}
-            <Dialog open={createOpen} onOpenChange={(open) => { if (!open) setCreateOpen(false); }}>
+            <Dialog open={createOpen} onOpenChange={(open) => {
+ if (!open) {
+setCreateOpen(false);
+} 
+}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>New Payroll Run</DialogTitle>
@@ -204,7 +214,11 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
             </Dialog>
 
             {/* Edit Dialog */}
-            <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null); }}>
+            <Dialog open={!!editTarget} onOpenChange={(open) => {
+ if (!open) {
+setEditTarget(null);
+} 
+}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Payroll Run</DialogTitle>
@@ -234,7 +248,11 @@ export default function PayrollIndex({ runs }: { runs: PayrollRun[] }) {
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+            <Dialog open={!!deleteTarget} onOpenChange={(open) => {
+ if (!open) {
+setDeleteTarget(null);
+} 
+}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Delete Payroll Run</DialogTitle>

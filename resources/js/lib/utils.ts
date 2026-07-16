@@ -15,5 +15,6 @@ export function formatDate(date: string): string {
     const [year, month, day] = date.split('T')[0].split('-').map(Number);
     const parsed = new Date(year, month - 1, day);
     const monthAbbr = parsed.toLocaleDateString('en-US', { month: 'short' });
+
     return `${monthAbbr}. ${parsed.getDate()}, ${year}`;
 }

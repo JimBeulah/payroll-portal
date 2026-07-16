@@ -1,12 +1,12 @@
-import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { useEffect } from 'react';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import InputError from '@/components/input-error';
-import { PayrollEntry } from './payroll-summary-table';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import type { PayrollEntry } from './payroll-summary-table';
 
 interface Props {
     entry: PayrollEntry | null;
@@ -44,14 +44,24 @@ export default function DeductionSheet({ entry, open, onClose }: Props) {
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
-        if (!entry) return;
+
+        if (!entry) {
+return;
+}
+
         put(`/payroll-entries/${entry.id}`, {
-            onSuccess: () => { reset(); onClose(); },
+            onSuccess: () => {
+ reset(); onClose(); 
+},
         });
     }
 
     return (
-        <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+        <Sheet open={open} onOpenChange={(o) => {
+ if (!o) {
+onClose();
+} 
+}}>
             <SheetContent className="flex flex-col gap-0 p-0 sm:max-w-md">
                 <SheetHeader className="px-6 pt-6 pb-4">
                     <SheetTitle className="text-lg">{entry?.employee?.name ?? '(deleted employee)'}</SheetTitle>

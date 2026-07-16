@@ -31,6 +31,7 @@ export default function Company({ company_name, logo_url }: Props) {
     function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0] ?? null;
         setData('logo', file);
+
         if (file) {
             setPreview(URL.createObjectURL(file));
         }

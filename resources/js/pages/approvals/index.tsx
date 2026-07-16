@@ -1,6 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import type { Auth } from '@/types/auth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +20,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { Auth } from '@/types/auth';
 
 type Status = 'pending' | 'approved' | 'rejected';
 type RequestKind = 'cash-advance' | 'leave';
@@ -74,6 +74,7 @@ function formatDate(value: string) {
     const [year, month, day] = value.split('T')[0].split('-').map(Number);
     const date = new Date(year, month - 1, day);
     const monthAbbr = date.toLocaleDateString('en-US', { month: 'short' });
+
     return `${monthAbbr}. ${date.getDate()}, ${year}`;
 }
 

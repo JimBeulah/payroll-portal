@@ -1,15 +1,15 @@
-import { useState, useMemo } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import type { Auth } from '@/types/auth';
+import { useState, useMemo } from 'react';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import InputError from '@/components/input-error';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { index } from '@/routes/employees';
+import type { Auth } from '@/types/auth';
 
 interface Employee {
     id: number;
@@ -36,6 +36,7 @@ function toUsername(name: string): string {
 
 function TabBar({ tab, setTab }: { tab: ModalTab; setTab: (t: ModalTab) => void }) {
     const tabs: ModalTab[] = ['details', 'account'];
+
     return (
         <div className="flex gap-1 border-b mb-4">
             {tabs.map((t) => (
@@ -76,11 +77,13 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
+
         return employees.filter(emp => {
             const matchesSearch = !q || emp.name.toLowerCase().includes(q) || (emp.department ?? '').toLowerCase().includes(q);
             const matchesStatus =
                 statusFilter === 'all' ||
                 (statusFilter === 'active' ? emp.is_active : !emp.is_active);
+
             return matchesSearch && matchesStatus;
         });
     }, [employees, search, statusFilter]);
@@ -136,7 +139,9 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
             onSuccess: closeDialog,
             onError: (errors) => {
                 // Surface account errors by switching to the relevant tab.
-                if (errors.username || errors.password) setCreateTab('account');
+                if (errors.username || errors.password) {
+setCreateTab('account');
+}
             },
         });
     }
@@ -146,7 +151,9 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
         editForm.put(`/employees/${target?.id}`, {
             onSuccess: closeDialog,
             onError: (errors) => {
-                if (errors.username || errors.password) setEditTab('account');
+                if (errors.username || errors.password) {
+setEditTab('account');
+}
             },
         });
     }
@@ -169,10 +176,14 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                     <Input
                         placeholder="Search by name or department…"
                         value={search}
-                        onChange={e => { setSearch(e.target.value); setPage(1); }}
+                        onChange={e => {
+ setSearch(e.target.value); setPage(1); 
+}}
                         className="max-w-sm"
                     />
-                    <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
+                    <Select value={statusFilter} onValueChange={v => {
+ setStatusFilter(v); setPage(1); 
+}}>
                         <SelectTrigger className="w-40">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
@@ -245,7 +256,11 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
             </div>
 
             {/* Create Dialog */}
-            <Dialog open={mode === 'create'} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+            <Dialog open={mode === 'create'} onOpenChange={(open) => {
+ if (!open) {
+closeDialog();
+} 
+}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Add Employee</DialogTitle>
@@ -311,7 +326,9 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
                                     <Label>Username</Label>
                                     <Input
                                         value={createForm.data.username}
-                                        onChange={e => { setUsernameEdited(true); createForm.setData('username', e.target.value); }}
+                                        onChange={e => {
+ setUsernameEdited(true); createForm.setData('username', e.target.value); 
+}}
                                         autoComplete="off"
                                     />
                                     <InputError message={createForm.errors.username} />
@@ -333,7 +350,11 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
             </Dialog>
 
             {/* Edit Dialog */}
-            <Dialog open={mode === 'edit'} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+            <Dialog open={mode === 'edit'} onOpenChange={(open) => {
+ if (!open) {
+closeDialog();
+} 
+}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Employee</DialogTitle>
@@ -430,7 +451,11 @@ export default function EmployeesIndex({ employees }: { employees: Employee[] })
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={mode === 'delete'} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+            <Dialog open={mode === 'delete'} onOpenChange={(open) => {
+ if (!open) {
+closeDialog();
+} 
+}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Delete Employee</DialogTitle>

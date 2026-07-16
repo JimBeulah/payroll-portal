@@ -64,6 +64,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         if (item.roles) {
 return item.roles.includes(auth.user.role);
 }
+
         return !item.adminOnly || isAdmin;
     });
 

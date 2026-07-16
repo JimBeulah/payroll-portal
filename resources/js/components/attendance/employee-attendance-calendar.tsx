@@ -36,34 +36,49 @@ interface Props {
 }
 
 function toHHMM(value: string): string {
-    if (!value) return '';
+    if (!value) {
+return '';
+}
+
     const parts = value.substring(0, 5).split(':');
+
     return parts[0].padStart(2, '0') + ':' + (parts[1] ?? '00').padStart(2, '0');
 }
 
 function to12hr(value: string): string {
-    if (!value) return '';
+    if (!value) {
+return '';
+}
+
     const hhmm = toHHMM(value);
     const [h, m] = hhmm.split(':').map(Number);
     const period = h >= 12 ? 'pm' : 'am';
     const hour = h % 12 === 0 ? 12 : h % 12;
+
     return `${hour}:${String(m).padStart(2, '0')}${period}`;
 }
 
 function timeToMins(hhmm: string): number {
     const [h, m] = toHHMM(hhmm).split(':').map(Number);
+
     return h * 60 + m;
 }
 
 function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: string) {
-    let sStart = timeToMins(shiftStart);
+    const sStart = timeToMins(shiftStart);
     let sEnd = timeToMins(shiftEnd);
     const aStart = timeToMins(sw);
     const aEnd = timeToMins(ew);
 
-    if (sEnd <= sStart) sEnd += 1440;
+    if (sEnd <= sStart) {
+sEnd += 1440;
+}
+
     let adjAEnd = aEnd;
-    if (adjAEnd <= aStart) adjAEnd += 1440;
+
+    if (adjAEnd <= aStart) {
+adjAEnd += 1440;
+}
 
     const shiftMins = sEnd - sStart;
     const breakMins = Math.max(0, shiftMins - 480);
@@ -76,17 +91,21 @@ function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: s
 
     if (aStart > sStart) {
         let raw = aStart - sStart;
+
         if (breakMins > 0 && aStart > bStart) {
             raw -= Math.min(aStart, bEnd) - bStart;
         }
+
         late = Math.max(0, raw);
     }
 
     if (adjAEnd < sEnd) {
         let raw = sEnd - adjAEnd;
+
         if (breakMins > 0 && adjAEnd < bEnd) {
             raw -= bEnd - Math.max(adjAEnd, bStart);
         }
+
         undertime = Math.max(0, raw);
     }
 
@@ -95,11 +114,13 @@ function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: s
         // Deduct unpaid lunch (12pm–1pm) if OT window overlaps it (same day or next day)
         const lunchStart = 12 * 60;
         const lunchEnd = 13 * 60;
+
         for (const offset of [0, 1440]) {
             const ls = lunchStart + offset;
             const le = lunchEnd + offset;
             rawOt -= Math.max(0, Math.min(adjAEnd, le) - Math.max(sEnd, ls));
         }
+
         overtime = Math.max(0, rawOt);
     }
 
@@ -107,9 +128,13 @@ function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: s
 }
 
 function fmtMinutes(minutes: number): string {
-    if (minutes < 60) return `${minutes}m`;
+    if (minutes < 60) {
+return `${minutes}m`;
+}
+
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
+
     return m === 0 ? `${h}hr` : `${h}hr ${m}m`;
 }
 
@@ -117,6 +142,7 @@ function formatDateString(d: Date): string {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
+
     return `${y}-${m}-${day}`;
 }
 
@@ -136,9 +162,11 @@ export default function EmployeeAttendanceCalendar({
 
     const dateArray: (Date | null)[] = [];
     const startingDayOfWeek = firstDay.getDay();
+
     for (let i = 0; i < startingDayOfWeek; i++) {
         dateArray.push(null);
     }
+
     for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
         dateArray.push(new Date(d));
     }
@@ -155,11 +183,13 @@ export default function EmployeeAttendanceCalendar({
 
     function isInPeriod(date: Date): boolean {
         const dateStr = formatDateString(date);
+
         return dateStr >= periodStart && dateStr <= periodEnd;
     }
 
     function isToday(date: Date): boolean {
         const now = new Date();
+
         return (
             date.getFullYear() === now.getFullYear() &&
             date.getMonth() === now.getMonth() &&
@@ -227,6 +257,7 @@ export default function EmployeeAttendanceCalendar({
                             attendance.sw && attendance.ew
                                 ? computeDayStats(attendance.sw, attendance.ew, attendance.shift_start, attendance.shift_end)
                                 : null;
+
                         return (
                             <div className="text-[11px] font-medium space-y-0.5">
                                 <div className="flex items-center gap-1">

@@ -1,13 +1,14 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useState, useRef } from 'react';
-import { index } from '@/routes/payroll-runs';
-import { formatDate } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Upload, Calculator } from 'lucide-react';
-import PayrollSummaryTable, { PayrollEntry } from '@/components/payroll/payroll-summary-table';
+import { useState, useRef } from 'react';
 import DeductionSheet from '@/components/payroll/deduction-sheet';
+import type { PayrollEntry } from '@/components/payroll/payroll-summary-table';
+import PayrollSummaryTable from '@/components/payroll/payroll-summary-table';
 import ShiftCalendarGrid from '@/components/payroll/shift-calendar-grid';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { formatDate } from '@/lib/utils';
+import { index } from '@/routes/payroll-runs';
 import type { Auth } from '@/types/auth';
 
 interface PayrollRun {
@@ -70,14 +71,21 @@ export default function PayrollShow({ run, entries, uploads, employees, manualAt
 
     function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
-        if (!file) return;
+
+        if (!file) {
+return;
+}
+
         setUploading(true);
         const form = new FormData();
         form.append('file', file);
         router.post(`/payroll-runs/${run.id}/upload`, form as any, {
             onFinish: () => {
                 setUploading(false);
-                if (fileRef.current) fileRef.current.value = '';
+
+                if (fileRef.current) {
+fileRef.current.value = '';
+}
             },
         });
     }

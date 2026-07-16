@@ -107,6 +107,7 @@ export default function AuditLogsIndex({
         if (!url) {
             return;
         }
+
         router.get(url, {}, { preserveState: true, preserveScroll: true });
     }
 

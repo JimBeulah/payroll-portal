@@ -1,9 +1,9 @@
 import { useForm } from '@inertiajs/react';
 import { useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Employee {
@@ -81,6 +81,7 @@ export default function ManualAttendanceModal({ open, onClose, payrollRunId, emp
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
+
         if (editing) {
             put(`/payroll-manual-attendances/${editing.id}`, {
                 onSuccess: () => {

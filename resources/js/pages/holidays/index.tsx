@@ -1,16 +1,16 @@
-import { useState, useMemo } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import type { Auth } from '@/types/auth';
+import { useState, useMemo } from 'react';
+import InputError from '@/components/input-error';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import InputError from '@/components/input-error';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { index } from '@/routes/holidays';
 import { formatDate } from '@/lib/utils';
+import { index } from '@/routes/holidays';
+import type { Auth } from '@/types/auth';
 
 interface Holiday {
     id: number;
@@ -39,9 +39,11 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
+
         return holidays.filter(h => {
             const matchesSearch = !q || h.name.toLowerCase().includes(q) || h.date.includes(q);
             const matchesType = typeFilter === 'all' || h.type === typeFilter;
+
             return matchesSearch && matchesType;
         });
     }, [holidays, search, typeFilter]);
@@ -99,10 +101,14 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
                     <Input
                         placeholder="Search by name or date…"
                         value={search}
-                        onChange={e => { setSearch(e.target.value); setPage(1); }}
+                        onChange={e => {
+ setSearch(e.target.value); setPage(1); 
+}}
                         className="max-w-sm"
                     />
-                    <Select value={typeFilter} onValueChange={v => { setTypeFilter(v); setPage(1); }}>
+                    <Select value={typeFilter} onValueChange={v => {
+ setTypeFilter(v); setPage(1); 
+}}>
                         <SelectTrigger className="w-44">
                             <SelectValue placeholder="Type" />
                         </SelectTrigger>
@@ -173,7 +179,11 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
             </div>
 
             {/* Create Dialog */}
-            <Dialog open={mode === 'create'} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+            <Dialog open={mode === 'create'} onOpenChange={(open) => {
+ if (!open) {
+closeDialog();
+} 
+}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Add Holiday</DialogTitle>
@@ -209,7 +219,11 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
             </Dialog>
 
             {/* Edit Dialog */}
-            <Dialog open={mode === 'edit'} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+            <Dialog open={mode === 'edit'} onOpenChange={(open) => {
+ if (!open) {
+closeDialog();
+} 
+}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Holiday</DialogTitle>
@@ -245,7 +259,11 @@ export default function HolidaysIndex({ holidays }: { holidays: Holiday[] }) {
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={mode === 'delete'} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+            <Dialog open={mode === 'delete'} onOpenChange={(open) => {
+ if (!open) {
+closeDialog();
+} 
+}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Delete Holiday</DialogTitle>

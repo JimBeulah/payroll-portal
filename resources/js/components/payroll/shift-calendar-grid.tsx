@@ -1,9 +1,9 @@
 import { router } from '@inertiajs/react';
-import { useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Employee {
     id: number;
@@ -49,33 +49,47 @@ interface Props {
 }
 
 function toHHMM(value: string): string {
-    if (!value) return '';
+    if (!value) {
+return '';
+}
+
     const parts = value.substring(0, 5).split(':');
+
     return parts[0].padStart(2, '0') + ':' + (parts[1] ?? '00').padStart(2, '0');
 }
 
 function to12hr(value: string): string {
-    if (!value) return '';
+    if (!value) {
+return '';
+}
+
     const hhmm = toHHMM(value);
     const [h, m] = hhmm.split(':').map(Number);
     const period = h >= 12 ? 'pm' : 'am';
     const hour = h % 12 === 0 ? 12 : h % 12;
+
     return `${hour}:${String(m).padStart(2, '0')}${period}`;
 }
 
 function timeToMins(hhmm: string): number {
     const [h, m] = toHHMM(hhmm).split(':').map(Number);
+
     return h * 60 + m;
 }
 
 function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: string) {
-    let sStart = timeToMins(shiftStart);
+    const sStart = timeToMins(shiftStart);
     let sEnd   = timeToMins(shiftEnd);
-    let aStart = timeToMins(sw);
+    const aStart = timeToMins(sw);
     let aEnd   = timeToMins(ew);
 
-    if (sEnd <= sStart) sEnd += 1440;
-    if (aEnd <= aStart) aEnd += 1440;
+    if (sEnd <= sStart) {
+sEnd += 1440;
+}
+
+    if (aEnd <= aStart) {
+aEnd += 1440;
+}
 
     const shiftMins = sEnd - sStart;
     const breakMins = Math.max(0, shiftMins - 480);
@@ -86,17 +100,21 @@ function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: s
 
     if (aStart > sStart) {
         let raw = aStart - sStart;
+
         if (breakMins > 0 && aStart > bStart) {
             raw -= Math.min(aStart, bEnd) - bStart;
         }
+
         late = Math.max(0, raw);
     }
 
     if (aEnd < sEnd) {
         let raw = sEnd - aEnd;
+
         if (breakMins > 0 && aEnd < bEnd) {
             raw -= bEnd - Math.max(aEnd, bStart);
         }
+
         undertime = Math.max(0, raw);
     }
 
@@ -105,11 +123,13 @@ function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: s
         // Deduct unpaid lunch (12pm–1pm) if OT window overlaps it (same day or next day)
         const lunchStart = 12 * 60;
         const lunchEnd   = 13 * 60;
+
         for (const offset of [0, 1440]) {
             const ls = lunchStart + offset;
             const le = lunchEnd   + offset;
             rawOt -= Math.max(0, Math.min(aEnd, le) - Math.max(sEnd, ls));
         }
+
         overtime = Math.max(0, rawOt);
     }
 
@@ -117,9 +137,13 @@ function computeDayStats(sw: string, ew: string, shiftStart: string, shiftEnd: s
 }
 
 function fmtMinutes(minutes: number): string {
-    if (minutes < 60) return `${minutes}m`;
+    if (minutes < 60) {
+return `${minutes}m`;
+}
+
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
+
     return m === 0 ? `${h}hr` : `${h}hr ${m}m`;
 }
 
@@ -153,9 +177,11 @@ export default function ShiftCalendarGrid({
     // Generate all dates to display (including padding from previous/next month)
     const dateArray: (Date | null)[] = [];
     const startingDayOfWeek = firstDay.getDay();
+
     for (let i = 0; i < startingDayOfWeek; i++) {
         dateArray.push(null);
     }
+
     for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
         dateArray.push(new Date(d));
     }
@@ -171,16 +197,25 @@ export default function ShiftCalendarGrid({
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
+
         return `${y}-${m}-${day}`;
     }
 
     function handleDateClick(date: Date | null) {
-        if (readOnly || !date || !employee) return;
+        if (readOnly || !date || !employee) {
+return;
+}
+
         const dateStr = formatDateString(date);
-        if (dateStr < periodStart || dateStr > periodEnd) return;
+
+        if (dateStr < periodStart || dateStr > periodEnd) {
+return;
+}
+
         setPickerDate(dateStr);
         const existing = attendanceByDate[dateStr];
         const excelDay = (attendanceData[Number(selectedEmployee)] ?? {})[dateStr] ?? null;
+
         if (existing) {
             setCustomShiftStart(toHHMM(existing.shift_start));
             setCustomShiftEnd(toHHMM(existing.shift_end));
@@ -206,7 +241,10 @@ export default function ShiftCalendarGrid({
     }
 
     function addShift(shiftStart: string, shiftEnd: string) {
-        if (!selectedEmployee || !pickerDate) return;
+        if (!selectedEmployee || !pickerDate) {
+return;
+}
+
         const existing = attendanceByDate[pickerDate];
 
         const data = {
@@ -221,6 +259,7 @@ export default function ShiftCalendarGrid({
         };
 
         setProcessing(true);
+
         if (existing) {
             router.put(`/payroll-manual-attendances/${existing.id}`, data, {
                 onSuccess: () => setPickerDate(null),
@@ -236,7 +275,11 @@ export default function ShiftCalendarGrid({
 
     function removeShift(date: string) {
         const existing = attendanceByDate[date];
-        if (!existing || !confirm('Remove this shift entry?')) return;
+
+        if (!existing || !confirm('Remove this shift entry?')) {
+return;
+}
+
         router.delete(`/payroll-manual-attendances/${existing.id}`, {
             onSuccess: () => setPickerDate(null),
         });
@@ -244,11 +287,13 @@ export default function ShiftCalendarGrid({
 
     function isInPeriod(date: Date): boolean {
         const dateStr = formatDateString(date);
+
         return dateStr >= periodStart && dateStr <= periodEnd;
     }
 
     function isToday(date: Date): boolean {
         const now = new Date();
+
         return date.getFullYear() === now.getFullYear()
             && date.getMonth() === now.getMonth()
             && date.getDate() === now.getDate();
@@ -364,6 +409,7 @@ export default function ShiftCalendarGrid({
                                     const stats = attendance.sw && attendance.ew
                                         ? computeDayStats(attendance.sw, attendance.ew, attendance.shift_start, attendance.shift_end)
                                         : null;
+
                                     return (
                                         <div className="text-[11px] font-medium space-y-0.5">
                                             {attendance.is_override && (
@@ -427,7 +473,9 @@ export default function ShiftCalendarGrid({
                                             <Button
                                                 key={label} size="sm"
                                                 variant={customShiftStart === s && customShiftEnd === e ? 'default' : 'outline'}
-                                                onClick={() => { setCustomShiftStart(s); setCustomShiftEnd(e); setSw(s); setEw(e); }}
+                                                onClick={() => {
+ setCustomShiftStart(s); setCustomShiftEnd(e); setSw(s); setEw(e); 
+}}
                                             >
                                                 {label}
                                             </Button>
@@ -441,7 +489,9 @@ export default function ShiftCalendarGrid({
                                             <Button
                                                 key={label} size="sm"
                                                 variant={customShiftStart === s && customShiftEnd === e ? 'default' : 'outline'}
-                                                onClick={() => { setCustomShiftStart(s); setCustomShiftEnd(e); setSw(s); setEw(e); }}
+                                                onClick={() => {
+ setCustomShiftStart(s); setCustomShiftEnd(e); setSw(s); setEw(e); 
+}}
                                             >
                                                 {label}
                                             </Button>
@@ -451,8 +501,12 @@ export default function ShiftCalendarGrid({
                                 <div className="space-y-1 pt-1">
                                     <p className="text-xs text-muted-foreground">Custom</p>
                                     <div className="grid grid-cols-2 gap-1.5">
-                                        <Input type="time" value={customShiftStart} onChange={e => { setCustomShiftStart(e.target.value); setSw(e.target.value); }} />
-                                        <Input type="time" value={customShiftEnd} onChange={e => { setCustomShiftEnd(e.target.value); setEw(e.target.value); }} />
+                                        <Input type="time" value={customShiftStart} onChange={e => {
+ setCustomShiftStart(e.target.value); setSw(e.target.value); 
+}} />
+                                        <Input type="time" value={customShiftEnd} onChange={e => {
+ setCustomShiftEnd(e.target.value); setEw(e.target.value); 
+}} />
                                     </div>
                                 </div>
                             </div>

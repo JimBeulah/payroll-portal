@@ -3,7 +3,9 @@ import EmployeeAttendanceCalendar from '@/components/attendance/employee-attenda
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
@@ -53,7 +55,25 @@ function formatPeriodLabel(run: PayrollRunOption) {
     const start = new Date(`${run.period_start}T00:00:00`);
     const end = new Date(`${run.period_end}T00:00:00`);
     const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+
     return `${start.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, opts)}`;
+}
+
+function groupRunsByYear(runs: PayrollRunOption[]) {
+    const groups: { year: string; runs: PayrollRunOption[] }[] = [];
+
+    for (const run of runs) {
+        const year = run.period_start.slice(0, 4);
+        const lastGroup = groups[groups.length - 1];
+
+        if (lastGroup?.year === year) {
+            lastGroup.runs.push(run);
+        } else {
+            groups.push({ year, runs: [run] });
+        }
+    }
+
+    return groups;
 }
 
 export default function AttendanceIndex({
@@ -98,11 +118,18 @@ export default function AttendanceIndex({
                         <SelectTrigger>
                             <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                            {payrollRuns.map((run) => (
-                                <SelectItem key={run.id} value={String(run.id)}>
-                                    {formatPeriodLabel(run)}
-                                </SelectItem>
+                        <SelectContent className="max-h-72">
+                            {groupRunsByYear(payrollRuns).map(({ year, runs }) => (
+                                <SelectGroup key={year}>
+                                    <SelectLabel className="sticky top-0 z-10 bg-popover">
+                                        {year}
+                                    </SelectLabel>
+                                    {runs.map((run) => (
+                                        <SelectItem key={run.id} value={String(run.id)}>
+                                            {formatPeriodLabel(run)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
                             ))}
                         </SelectContent>
                     </Select>
