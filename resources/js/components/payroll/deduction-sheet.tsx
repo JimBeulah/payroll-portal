@@ -54,8 +54,8 @@ export default function DeductionSheet({ entry, open, onClose }: Props) {
         <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
             <SheetContent className="flex flex-col gap-0 p-0 sm:max-w-md">
                 <SheetHeader className="px-6 pt-6 pb-4">
-                    <SheetTitle className="text-lg">{entry?.employee.name}</SheetTitle>
-                    <SheetDescription>{entry?.employee.department}</SheetDescription>
+                    <SheetTitle className="text-lg">{entry?.employee?.name ?? '(deleted employee)'}</SheetTitle>
+                    <SheetDescription>{entry?.employee?.department ?? '—'}</SheetDescription>
                 </SheetHeader>
 
                 <Separator />

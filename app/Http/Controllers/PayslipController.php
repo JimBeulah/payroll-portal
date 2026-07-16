@@ -27,7 +27,7 @@ class PayslipController extends Controller
     {
         abort_if(!$payrollEntry->payrollRun->isLocked(), 403);
 
-        $payrollEntry->load('employee', 'payrollRun');
+        $payrollEntry->load(['employee' => fn ($q) => $q->withTrashed(), 'payrollRun']);
 
         $logoPath = AppSetting::get('company_logo');
 
@@ -45,7 +45,7 @@ class PayslipController extends Controller
     {
         abort_if(!$payrollRun->isLocked(), 403);
 
-        $payrollRun->load('entries.employee');
+        $payrollRun->load(['entries.employee' => fn ($q) => $q->withTrashed()]);
 
         $companyData = $this->companyData();
 
@@ -74,7 +74,7 @@ class PayslipController extends Controller
     {
         abort_if(!$payrollRun->isLocked(), 403);
 
-        $payrollRun->load('entries.employee');
+        $payrollRun->load(['entries.employee' => fn ($q) => $q->withTrashed()]);
 
         $logoPath = AppSetting::get('company_logo');
 

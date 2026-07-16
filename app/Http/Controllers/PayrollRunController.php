@@ -43,7 +43,11 @@ class PayrollRunController extends Controller
 
     public function show(PayrollRun $payrollRun, AttendanceCalendarService $attendanceCalendar)
     {
-        $payrollRun->load('entries.employee', 'uploads', 'manualAttendances.employee');
+        $payrollRun->load([
+            'entries.employee' => fn ($q) => $q->withTrashed(),
+            'uploads',
+            'manualAttendances.employee' => fn ($q) => $q->withTrashed(),
+        ]);
 
         $calendar = $attendanceCalendar->buildForRun($payrollRun);
 

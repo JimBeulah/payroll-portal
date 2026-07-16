@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 
 export interface PayrollEntry {
     id: number;
-    employee: { name: string; department: string };
+    employee: { name: string; department: string } | null;
     days_present: number;
     total_basic_pay: string;
     overtime_pay: string;
@@ -51,8 +51,8 @@ export default function PayrollSummaryTable({ entries, isLocked, onEdit, onDownl
                 <TableBody>
                     {entries.map((e) => (
                         <TableRow key={e.id}>
-                            <TableCell className="sticky left-0 z-10 bg-background font-medium">{e.employee.name}</TableCell>
-                            <TableCell>{e.employee.department}</TableCell>
+                            <TableCell className="sticky left-0 z-10 bg-background font-medium">{e.employee?.name ?? '(deleted employee)'}</TableCell>
+                            <TableCell>{e.employee?.department ?? '—'}</TableCell>
                             <TableCell className="text-right">{e.days_present}</TableCell>
                             <TableCell className="text-right">{fmt(e.total_basic_pay)}</TableCell>
                             <TableCell className="text-right">{fmt(e.overtime_pay)}</TableCell>
