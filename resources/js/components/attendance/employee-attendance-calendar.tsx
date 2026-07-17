@@ -231,7 +231,7 @@ export default function EmployeeAttendanceCalendar({
                     </div>
                 )}
 
-                {excelDay && !attendance && !leaveDay && !holiday && (
+                {excelDay && !attendance && !leaveDay && (
                     <div className="text-[11px] space-y-0.5">
                         <div className="flex items-center gap-1">
                             <span className="text-[9px] uppercase text-muted-foreground font-semibold shrink-0">T</span>
@@ -251,7 +251,6 @@ export default function EmployeeAttendanceCalendar({
 
                 {attendance &&
                     !leaveDay &&
-                    !holiday &&
                     (() => {
                         const stats =
                             attendance.sw && attendance.ew
@@ -302,9 +301,9 @@ export default function EmployeeAttendanceCalendar({
             );
         }
 
-        if (holiday) {
-            return <div className="text-violet-600 dark:text-violet-400 font-medium">Holiday — {holiday.name}</div>;
-        }
+        const holidayLine = holiday && (
+            <div className="text-violet-600 dark:text-violet-400 font-medium">Holiday — {holiday.name}</div>
+        );
 
         if (attendance) {
             const stats =
@@ -315,28 +314,38 @@ export default function EmployeeAttendanceCalendar({
             const ew = attendance.ew ? to12hr(attendance.ew) : null;
 
             return (
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                    <span className="font-medium">
-                        {sw && ew ? `${sw}–${ew}` : `Shift ${to12hr(attendance.shift_start)}–${to12hr(attendance.shift_end)}`}
-                    </span>
-                    {stats && stats.late_minutes > 0 && <span className="text-amber-500">Late {fmtMinutes(stats.late_minutes)}</span>}
-                    {stats && stats.undertime_minutes > 0 && <span className="text-orange-500">UT {fmtMinutes(stats.undertime_minutes)}</span>}
-                    {stats && stats.overtime_minutes > 0 && <span className="text-green-500">OT {fmtMinutes(stats.overtime_minutes)}</span>}
+                <div className="space-y-0.5">
+                    {holidayLine}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span className="font-medium">
+                            {sw && ew ? `${sw}–${ew}` : `Shift ${to12hr(attendance.shift_start)}–${to12hr(attendance.shift_end)}`}
+                        </span>
+                        {stats && stats.late_minutes > 0 && <span className="text-amber-500">Late {fmtMinutes(stats.late_minutes)}</span>}
+                        {stats && stats.undertime_minutes > 0 && <span className="text-orange-500">UT {fmtMinutes(stats.undertime_minutes)}</span>}
+                        {stats && stats.overtime_minutes > 0 && <span className="text-green-500">OT {fmtMinutes(stats.overtime_minutes)}</span>}
+                    </div>
                 </div>
             );
         }
 
         if (excelDay) {
             return (
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                    <span className="font-medium">
-                        {to12hr(excelDay.sw)}–{to12hr(excelDay.ew)}
-                    </span>
-                    {excelDay.late_minutes > 0 && <span className="text-amber-500">Late {fmtMinutes(excelDay.late_minutes)}</span>}
-                    {excelDay.undertime_minutes > 0 && <span className="text-orange-500">UT {fmtMinutes(excelDay.undertime_minutes)}</span>}
-                    {excelDay.overtime_minutes > 0 && <span className="text-green-500">OT {fmtMinutes(excelDay.overtime_minutes)}</span>}
+                <div className="space-y-0.5">
+                    {holidayLine}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span className="font-medium">
+                            {to12hr(excelDay.sw)}–{to12hr(excelDay.ew)}
+                        </span>
+                        {excelDay.late_minutes > 0 && <span className="text-amber-500">Late {fmtMinutes(excelDay.late_minutes)}</span>}
+                        {excelDay.undertime_minutes > 0 && <span className="text-orange-500">UT {fmtMinutes(excelDay.undertime_minutes)}</span>}
+                        {excelDay.overtime_minutes > 0 && <span className="text-green-500">OT {fmtMinutes(excelDay.overtime_minutes)}</span>}
+                    </div>
                 </div>
             );
+        }
+
+        if (holiday) {
+            return holidayLine;
         }
 
         return <div className="text-muted-foreground">No record</div>;
