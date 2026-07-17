@@ -12,7 +12,7 @@ cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
 self.addEventListener('push', (event) => {
-    const payload = event.data ? event.data.json() : { title: 'Payroll Portal' };
+    const payload = event.data ? event.data.json() : { title: 'PAYRO' };
 
     event.waitUntil(
         self.registration.showNotification(payload.title, {

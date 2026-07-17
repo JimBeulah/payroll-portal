@@ -1,4 +1,4 @@
-# 💰 Payroll Portal
+# 💰 PAYRO
 
 **Employee payroll management, simplified.**
 

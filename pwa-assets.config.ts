@@ -5,5 +5,5 @@ export default defineConfig({
         preset: '2023',
     },
     preset: minimal2023Preset,
-    images: ['public/payroll-logo.png'],
+    images: ['public/payro-logo.png'],
 });

@@ -48,8 +48,8 @@ export default defineConfig({
             filename: 'sw.ts',
             includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
             manifest: {
-                name: 'Payroll Portal',
-                short_name: 'Payroll',
+                name: 'PAYRO',
+                short_name: 'PAYRO',
                 description: 'Payroll, attendance, and employee self-service portal',
                 start_url: '/',
                 scope: '/',

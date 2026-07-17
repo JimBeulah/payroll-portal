@@ -17,7 +17,7 @@ export default function AuthSimpleLayout({
                             className="flex flex-col items-center gap-2 font-medium"
                         >
                             <div className="mb-1 flex h-16 w-16 items-center justify-center rounded-md overflow-hidden">
-                                <img src="/payroll-logo.png?v=2" alt="Payroll Portal Logo" className="size-16 object-contain" />
+                                <img src="/payro-logo.png?v=1" alt="PAYRO Logo" className="size-16 object-contain" />
                             </div>
                             <span className="sr-only">{title}</span>
                         </Link>

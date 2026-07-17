@@ -30,14 +30,14 @@
             }
         </style>
 
-        <link rel="icon" href="/payroll-logo.png?v=2" type="image/png">
+        <link rel="icon" href="/payro-logo.png?v=1" type="image/png">
         <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png">
 
         <link rel="manifest" href="/build/manifest.webmanifest">
         <meta name="theme-color" content="#4B5563">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
-        <meta name="apple-mobile-web-app-title" content="Payroll Portal">
+        <meta name="apple-mobile-web-app-title" content="PAYRO">
 
         @fonts
 

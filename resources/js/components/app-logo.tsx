@@ -7,12 +7,12 @@ export default function AppLogo() {
     return (
         <>
             <div className={`flex aspect-square size-8 items-center justify-center rounded-md overflow-hidden ${collapsed ? 'mx-auto' : ''}`}>
-                <img src="/payroll-logo.png?v=2" alt="Payroll Portal Logo" className="size-8 object-contain" />
+                <img src="/payro-logo.png?v=1" alt="PAYRO Logo" className="size-8 object-contain" />
             </div>
             {!collapsed && (
                 <div className="ml-1 grid flex-1 text-left text-sm">
                     <span className="mb-0.5 truncate leading-tight font-semibold">
-                        Payroll Portal
+                        PAYRO
                     </span>
                 </div>
             )}
